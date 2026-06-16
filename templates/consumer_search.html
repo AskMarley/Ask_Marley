@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Manual Search{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Manual Search</h1>
+  <p>Fallback category browser for users who prefer click-through discovery.</p>
+</section>
+
+<section class="tier-box" style="margin-bottom: 1rem;">
+  <form class="chat-form" method="get" action="{{ url_for('consumer.search') }}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search services, e.g. boiler, gardening, dog walking">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+  <div class="tier-links" style="margin-top: 0.8rem;">
+    <a href="{{ url_for('consumer.search', q=query, branch='all') }}">All Branches</a>
+    {% for branch in branches %}
+      <a href="{{ url_for('consumer.search', q=query, branch=branch) }}">{{ branch }}</a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid-cards">
+  {% if categories %}
+    {% for category in categories %}
+      <article class="card">
+        <h3>{{ category.name }}</h3>
+        <p>{{ category.branch }}</p>
+        <a class="btn btn-light" href="{{ url_for('consumer.chat') }}">Ask Marley for this</a>
+      </article>
+    {% endfor %}
+  {% else %}
+    <article class="card">
+      <h3>No matching categories</h3>
+      <p>Try another keyword or switch branch filters.</p>
+    </article>
+  {% endif %}
+</section>
+{% endblock %}

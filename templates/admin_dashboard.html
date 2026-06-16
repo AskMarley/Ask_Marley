@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Super Admin{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Super Admin Portal</h1>
+  <p>Operations dashboard for moderation, taxonomy, provider lifecycle, and analytics.</p>
+  <p><strong>Signed in as:</strong> {{ admin_ctx.name }} ({{ admin_ctx.role|replace('_', ' ')|title }})</p>
+</section>
+
+<section class="grid-cards analytics-grid">
+  <article class="card"><h3>Active Projects</h3><p class="metric">{{ analytics.active_projects }}</p></article>
+  <article class="card"><h3>Free</h3><p class="metric">{{ analytics.free_accounts }}</p></article>
+  <article class="card"><h3>Student</h3><p class="metric">{{ analytics.student_accounts }}</p></article>
+  <article class="card"><h3>Individual</h3><p class="metric">{{ analytics.individual_accounts }}</p></article>
+  <article class="card"><h3>Business</h3><p class="metric">{{ analytics.business_accounts }}</p></article>
+  <article class="card"><h3>Business Plus</h3><p class="metric">{{ analytics.business_plus_accounts }}</p></article>
+  <article class="card"><h3>Top Location</h3><p class="metric">{{ analytics.top_location }}</p></article>
+</section>
+
+<section class="split" style="margin-bottom: 1rem;">
+  <article class="tier-box">
+    <h2>Conversion Funnel</h2>
+    <div class="grid-cards analytics-grid">
+      <article class="card"><h3>Conversations</h3><p class="metric">{{ analytics.conversion_funnel.conversations_started }}</p></article>
+      <article class="card"><h3>Service Matches</h3><p class="metric">{{ analytics.conversion_funnel.service_matches }}</p></article>
+      <article class="card"><h3>Postcodes Completed</h3><p class="metric">{{ analytics.conversion_funnel.postcode_completed }}</p></article>
+      <article class="card"><h3>Projects Active</h3><p class="metric">{{ analytics.conversion_funnel.projects_active }}</p></article>
+    </div>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Exports</h3>
+    <p class="muted">Download current analytics as CSV for reporting.</p>
+    <a class="btn btn-primary" href="{{ url_for('admin.export_analytics_csv') }}">Export CSV</a>
+  </aside>
+</section>
+
+<section class="split" style="margin-bottom: 1rem;">
+  <article class="tier-box">
+    <h2>Provider Tier Distribution</h2>
+    <ul class="provider-list">
+      {% for tier, count in analytics.provider_tier_counts.items() %}
+        <li><strong>{{ tier|title }}</strong><p>{{ count }} providers</p></li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Moderation Health</h3>
+    <ul class="provider-list">
+      <li><strong>Open or Reviewing</strong><p>{{ analytics.moderation.open_cases }}</p></li>
+      <li><strong>Resolved</strong><p>{{ analytics.moderation.resolved_cases }}</p></li>
+      <li><strong>Active Threads</strong><p>{{ analytics.response_metrics.active_threads }}</p></li>
+      <li><strong>Avg Messages per Thread</strong><p>{{ analytics.response_metrics.avg_messages_per_thread }}</p></li>
+    </ul>
+  </aside>
+</section>
+
+<section class="tier-box" style="margin-bottom: 1rem;">
+  <h2>Geography Heatmap</h2>
+  <div class="grid-cards analytics-grid">
+    {% for row in analytics.geography_heatmap %}
+      <article class="card">
+        <h3>{{ row.outward_code }}</h3>
+        <p class="metric">{{ row.provider_count }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="split">
+  <article>
+    <h2>Provider Verification Queue</h2>
+    <div class="grid-cards">
+      {% for provider in provider_signups %}
+        <article class="card">
+          <h3>{{ provider.name }}</h3>
+          <p>{{ provider.service_path }}</p>
+          <p>Postcodes: {{ provider.postcodes }}</p>
+          <p>Status: {{ provider.status|title }} | Tier: {{ provider.tier|title }} | Verified: {{ 'Yes' if provider.verified else 'No' }}</p>
+          <div class="inline-actions">
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="verify-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for verification" required>
+              <button class="btn btn-primary" type="submit">Mark Verified</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="ban-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for suspension" required>
+              <button class="btn btn-danger" type="submit">Ban</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="reactivate-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for reactivation" required>
+              <button class="btn btn-light" type="submit">Reactivate</button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <h2>Tier Overrides</h2>
+    <form method="post" class="admin-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="override-tier">
+      <input type="text" name="provider_name" placeholder="Provider name" required>
+      <select name="new_tier">
+        <option value="basic">Basic</option>
+        <option value="plus">Plus</option>
+        <option value="premium">Premium</option>
+      </select>
+      <input type="text" name="reason" placeholder="Reason for tier override" required>
+      <button class="btn btn-light" type="submit">Apply Tier</button>
+    </form>
+
+    <h2>Admin Audit Trail</h2>
+    <ul class="provider-list">
+      {% if audit_trail %}
+        {% for event in audit_trail %}
+          <li>
+            <strong>{{ event.action }}</strong>
+            <p>{{ event.provider_name }} | Actor: {{ event.actor }}</p>
+            <small>{{ event.timestamp }} | Reason: {{ event.reason }}</small>
+            <p><small>Before: {{ event.before }}</small></p>
+            <p><small>After: {{ event.after }}</small></p>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No audit actions recorded yet.</li>
+      {% endif %}
+    </ul>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Safety Audit Flags</h3>
+    <ul class="provider-list">
+      {% for flag in flagged_chats %}
+        <li>
+          <strong>{{ flag.case_id }}</strong>
+          <p>{{ flag.reason }}</p>
+          <small>{{ flag.participants }} | Severity: {{ flag.severity|title }} | Source: {{ flag.source|default('system')|replace('-', ' ')|title }}</small>
+          <p><small>Status: {{ flag.status|default('open')|title }} | Reporter: {{ flag.reported_by|default('system') }}</small></p>
+          <form method="post" class="admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="moderation-status">
+            <input type="hidden" name="case_id" value="{{ flag.case_id }}">
+            <select name="new_status">
+              {% for state in moderation_statuses %}
+                <option value="{{ state }}" {% if state == flag.status %}selected{% endif %}>{{ state|title }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-light" type="submit">Update Status</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <h3>Taxonomy Manager</h3>
+    <form method="post" class="admin-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add-taxonomy">
+      <input type="text" name="category_path" placeholder="Branch > Category > Service" required>
+      <input type="text" name="reason" placeholder="Reason for adding taxonomy" required>
+      <button class="btn btn-primary" type="submit">Add Category</button>
+    </form>
+    <ul class="intent-list">
+      {% for entry in taxonomy %}
+        <li>
+          <strong>{{ entry.branch_path }}</strong>
+          <p><small>Version: {{ entry.version }} | Active: {{ 'Yes' if entry.active else 'No' }}</small></p>
+          <form method="post" class="admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="edit-taxonomy">
+            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+            <input type="text" name="category_path" value="{{ entry.branch_path }}" required>
+            <input type="text" name="reason" placeholder="Reason for edit" required>
+            <button class="btn btn-light" type="submit">Update</button>
+          </form>
+          <form method="post" class="admin-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+            {% if entry.active %}
+              <input type="hidden" name="action" value="deprecate-taxonomy">
+              <input type="text" name="reason" placeholder="Reason for deprecation" required>
+              <button class="btn btn-danger" type="submit">Deprecate</button>
+            {% else %}
+              <input type="hidden" name="action" value="reactivate-taxonomy">
+              <input type="text" name="reason" placeholder="Reason for reactivation" required>
+              <button class="btn btn-light" type="submit">Reactivate</button>
+            {% endif %}
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <h3>Taxonomy Version History</h3>
+    <ul class="provider-list">
+      {% if taxonomy_versions %}
+        {% for version_event in taxonomy_versions[:10] %}
+          <li>
+            <strong>Entry {{ version_event.entry_id }} v{{ version_event.version }}</strong>
+            <p>{{ version_event.before_path or 'N/A' }} -> {{ version_event.after_path }}</p>
+            <small>{{ version_event.timestamp }} | {{ version_event.actor }} | {{ version_event.reason }}</small>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No taxonomy version updates recorded yet.</li>
+      {% endif %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

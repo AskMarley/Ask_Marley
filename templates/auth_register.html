@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Register{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <div class="portal-brand-lockup">
+    <img class="portal-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
+  </div>
+  <h1>Create Your Account</h1>
+  <p>Choose a consumer or provider account to unlock the right AskMarley workflow.</p>
+</section>
+
+<section class="auth-shell">
+  <article class="tier-box">
+    <form class="auth-form" method="post" id="registerForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Basic fields (all roles) -->
+      <fieldset class="form-section">
+        <legend>Account Details</legend>
+        <div class="form-group">
+          <label for="fullName">Full name</label>
+          <input type="text" id="fullName" name="full_name" placeholder="Your full name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="roleSelect">Account type</label>
+          <select id="roleSelect" name="role">
+            <option value="consumer">Consumer</option>
+            <option value="provider">Provider</option>
+          </select>
+          <span class="form-help">Choose what fits your needs best.</span>
+        </div>
+      </fieldset>
+      
+      <!-- Consumer-only fields -->
+      <fieldset class="form-section" id="consumerFields">
+        <legend>Your Information</legend>
+        <div class="form-group">
+          <label for="consumerPhone">Phone number (optional)</label>
+          <input type="tel" id="consumerPhone" name="consumer_phone" placeholder="+44 20 7946 0958">
+          <span class="form-help">For better service recommendations.</span>
+        </div>
+        <div class="form-group">
+          <label for="consumerPostcode">Primary postcode</label>
+          <input type="text" id="consumerPostcode" name="consumer_postcode" placeholder="SW1A 2AA">
+          <span class="form-help">We'll match local providers to you.</span>
+        </div>
+      </fieldset>
+      
+      <!-- Provider-only fields -->
+      <fieldset class="form-section" id="providerFields" style="display:none;">
+        <legend>Your Business</legend>
+        <div class="form-group">
+          <label for="companyName">Company name</label>
+          <input type="text" id="companyName" name="company_name" placeholder="Your business name">
+        </div>
+        <div class="form-group">
+          <label for="providerPhone">Phone number</label>
+          <input type="tel" id="providerPhone" name="phone" placeholder="+44 20 7946 0958">
+        </div>
+        <div class="form-group">
+          <label for="businessReg">Business registration number</label>
+          <input type="text" id="businessReg" name="business_reg_number" placeholder="Company registration or tax ID">
+          <span class="form-help">e.g., Companies House reference</span>
+        </div>
+      </fieldset>
+      
+      <!-- Provider services -->
+      <fieldset class="form-section" id="providerServices" style="display:none;">
+        <legend>Services You Offer</legend>
+        <div class="form-group">
+          <label>Service categories (select all that apply)</label>
+          <div class="checkbox-grid" id="serviceCategories">
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="emergency-plumber"> 
+              <span>Emergency Plumbers</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="electrician"> 
+              <span>Electricians</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="cleaner"> 
+              <span>Domestic Cleaners</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="gardener"> 
+              <span>Gardeners</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="dog-walker"> 
+              <span>Dog Walkers</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="service_categories" value="wedding-planner"> 
+              <span>Wedding Planners</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="travelPostcodes">Travel postcodes (areas you cover)</label>
+          <input type="text" id="travelPostcodes" name="travel_postcodes" placeholder="SW1A, SE1, W1">
+          <span class="form-help">Comma-separated outward codes (e.g., W1, SW1A)</span>
+        </div>
+        
+        <div class="form-group form-group-checkbox">
+          <label class="checkbox-single">
+            <input type="checkbox" name="insurance_verified" value="true" id="insuranceVerified">
+            <span>I have professional public liability insurance</span>
+          </label>
+          <span class="form-help">This helps build trust with consumers.</span>
+        </div>
+      </fieldset>
+      
+      <!-- Password -->
+      <fieldset class="form-section">
+        <legend>Secure Your Account</legend>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+          <span class="form-help">At least 8 characters recommended</span>
+        </div>
+      </fieldset>
+      
+      <button class="btn btn-primary btn-submit" type="submit">Create Account</button>
+    </form>
+    <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>.</p>
+  </article>
+  
+  <script src="{{ url_for('static', filename='auth-register.js') }}"></script>
+
+  <aside class="chat-sidepanel">
+    <h3>Account Paths</h3>
+    <ul class="provider-list">
+      <li><strong>Consumer</strong><p>Access clipboard, projects, subscriptions, and collaboration tools.</p></li>
+      <li><strong>Provider</strong><p>Access provider dashboard and provider subscription management.</p></li>
+    </ul>
+  </aside>
+</section>
+{% endblock %}

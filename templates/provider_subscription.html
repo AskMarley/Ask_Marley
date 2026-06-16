@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Provider Subscription{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Provider Subscription</h1>
+  <p>Manage provider tier, billing state, and ranking entitlements.</p>
+</section>
+
+<section class="split">
+  <article class="tier-box">
+    <h3>Current Subscription</h3>
+    <p><strong>Selected Tier:</strong> {{ provider_sub.selected_tier|title }}</p>
+    <p><strong>Effective Tier:</strong> {{ provider_sub.effective_tier|title }}</p>
+    <p><strong>Billing Status:</strong> {{ provider_sub.billing_status|replace('_', ' ')|title }}</p>
+    <p><strong>Portfolio Allowance:</strong> {{ provider_sub.plan.portfolio_images }} images</p>
+    <p><strong>Ranking Priority:</strong> {{ provider_sub.plan.priority|title }}</p>
+
+    <form class="admin-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Plan</label>
+      <select name="tier">
+        {% for key, tier in tiers.items() %}
+          <option value="{{ key }}" {% if key == provider_sub.selected_tier %}selected{% endif %}>{{ tier.label }} ({{ tier.price }})</option>
+        {% endfor %}
+      </select>
+      <label>Billing Status</label>
+      <select name="billing_status">
+        {% for key, label in billing_statuses.items() %}
+          <option value="{{ key }}" {% if key == provider_sub.billing_status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">Update Subscription</button>
+    </form>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Tier Summary</h3>
+    <ul class="provider-list">
+      <li><strong>Basic</strong><p>Alphabetical bottom placement, minimal profile.</p></li>
+      <li><strong>Plus</strong><p>Mid priority, up to 6 portfolio images, logo and links.</p></li>
+      <li><strong>Premium</strong><p>Top priority with Marley's Choice eligibility.</p></li>
+    </ul>
+    <a class="btn btn-light" href="{{ url_for('provider.dashboard') }}">Back to Provider Dashboard</a>
+  </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Consumer Subscription{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Consumer Subscription</h1>
+  <p>Manage your consumer plan, billing state, and feature entitlements.</p>
+</section>
+
+<section class="split">
+  <article class="tier-box">
+    <h3>Current Subscription</h3>
+    <p><strong>Selected Tier:</strong> {{ consumer_sub.selected_tier|title }}</p>
+    <p><strong>Effective Tier:</strong> {{ consumer_sub.effective_tier|title }}</p>
+    <p><strong>Billing Status:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
+    <p><strong>Project Limit:</strong> {{ consumer_sub.plan.max_projects if consumer_sub.plan.max_projects != 999 else 'Unlimited' }}</p>
+
+    <form class="admin-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Plan</label>
+      <select name="tier">
+        {% for key, tier in tiers.items() %}
+          <option value="{{ key }}" {% if key == consumer_sub.selected_tier %}selected{% endif %}>{{ tier.label }} ({{ tier.price }})</option>
+        {% endfor %}
+      </select>
+      <label>Billing Status</label>
+      <select name="billing_status">
+        {% for key, label in billing_statuses.items() %}
+          <option value="{{ key }}" {% if key == consumer_sub.billing_status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">Update Subscription</button>
+    </form>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Plan Entitlements</h3>
+    <ul class="provider-list">
+      <li><strong>Free</strong><p>Search only. No active projects.</p></li>
+      <li><strong>Student</strong><p>1 active project.</p></li>
+      <li><strong>Individual</strong><p>3 active projects.</p></li>
+      <li><strong>Business</strong><p>Up to 10 active projects.</p></li>
+      <li><strong>Business Plus</strong><p>Unlimited active projects.</p></li>
+    </ul>
+    <a class="btn btn-light" href="{{ url_for('consumer.clipboard') }}">Back to Clipboard</a>
+  </aside>
+</section>
+{% endblock %}

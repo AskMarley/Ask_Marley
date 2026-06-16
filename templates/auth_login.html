@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Sign In{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <div class="portal-brand-lockup">
+    <img class="portal-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
+  </div>
+  <h1>Sign In</h1>
+  <p>Use your consumer, provider, or admin account to access protected portals.</p>
+</section>
+
+<section class="auth-shell">
+  <article class="tier-box">
+    <form class="admin-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Email</label>
+      <input type="email" name="email" placeholder="you@example.com" required>
+      <label>Password</label>
+      <input type="password" name="password" placeholder="Your password" required>
+      <button class="btn btn-primary" type="submit">Sign In</button>
+    </form>
+    <p class="muted">Need an account? <a href="{{ url_for('auth.register') }}">Register here</a>.</p>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Demo Access</h3>
+    <p class="muted">Use demo accounts for validation and QA flows.</p>
+    <div class="admin-form">
+      <form method="post" action="{{ url_for('auth.demo_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="target" value="consumer">
+        <button class="btn btn-light" type="submit">Demo Consumer</button>
+      </form>
+      <form method="post" action="{{ url_for('auth.demo_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="target" value="provider">
+        <button class="btn btn-light" type="submit">Demo Provider</button>
+      </form>
+      <form method="post" action="{{ url_for('auth.demo_login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="target" value="admin">
+        <button class="btn btn-light" type="submit">Demo Admin</button>
+      </form>
+    </div>
+  </aside>
+</section>
+{% endblock %}

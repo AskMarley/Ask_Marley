@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Clipboard{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Clipboard Dashboard</h1>
+  <p>Manage project boards, saved providers, and pinboard assets.</p>
+</section>
+
+<section class="split">
+  <article>
+    <div class="tier-box">
+      <h3>Your Plan: {{ user_tier.label }}</h3>
+      <p>{{ user_tier.price }} | Max Projects: {{ user_tier.max_projects if user_tier.max_projects != 999 else 'Unlimited' }}</p>
+      <p><strong>Selected:</strong> {{ consumer_sub.selected_tier|title }} | <strong>Billing:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
+      {% if over_limit %}
+        <p class="alert">You are over your active project limit. Upgrade to continue managing all projects.</p>
+      {% endif %}
+      <div class="tier-links">
+        {% for key, tier in consumer_tiers.items() %}
+          <a href="{{ url_for('consumer.clipboard', tier=key) }}">{{ tier.label }}</a>
+        {% endfor %}
+      </div>
+
+      <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard', tier=user_tier_slug) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="project_name" placeholder="Create a new project, e.g. Loft Conversion" required>
+        <button class="btn btn-primary" type="submit">Create Project</button>
+      </form>
+      <a class="btn btn-light" href="{{ url_for('consumer.subscription') }}">Manage Subscription</a>
+    </div>
+
+    <div class="grid-cards">
+      {% for project in projects %}
+        <article class="card">
+          <h3>{{ project.name }}</h3>
+          <p>Status: {{ project.status }}</p>
+          <p><strong>Saved Providers:</strong> {{ project.saved_providers|join(', ') }}</p>
+          <p><strong>Pinboard:</strong> {{ project.pinboard_items|join(' | ') }}</p>
+
+          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_save_provider', project_id=project.id, tier=user_tier_slug) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="provider_name" required>
+              <option value="">Save provider to project</option>
+              {% for provider_name in all_provider_names %}
+                <option value="{{ provider_name }}">{{ provider_name }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-light" type="submit">Save Provider</button>
+          </form>
+
+          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_pinboard_add', project_id=project.id, tier=user_tier_slug) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="pin_label" placeholder="Add pinboard item" required>
+            <button class="btn btn-light" type="submit">Add Pinboard Item</button>
+          </form>
+
+          <a class="btn btn-primary" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>
+        </article>
+      {% endfor %}
+    </div>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Realtime Chat + Pinboards</h3>
+    <ul class="provider-list">
+      {% for project in projects %}
+        <li>
+          <strong>{{ project.name }}</strong>
+          <p>Saved providers: {{ project.saved_providers|length }} | Pins: {{ project.pinboard_items|length }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

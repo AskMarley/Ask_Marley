@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Provider Dashboard{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Provider Portal</h1>
+  <p>Track local leads, respond in chat, and manage your listing performance.</p>
+</section>
+
+<section class="split">
+  <article>
+    <div class="tier-box provider-tier">
+      <h3>{{ provider_profile.name }}</h3>
+      <p>Subscription Tier: <span class="badge badge-gold">{{ provider_profile.tier|title }}</span></p>
+      <p><strong>Selected Tier:</strong> {{ provider_profile.selected_tier|title }} | <strong>Billing:</strong> {{ provider_profile.billing_status|replace('_', ' ')|title }}</p>
+      <p><strong>Travel Postcodes:</strong> {{ provider_profile.travel_postcodes|join(', ') }}</p>
+      <p><strong>Service Mapping:</strong></p>
+      <ul>
+        {% for service in provider_profile.services %}
+          <li>{{ service }}</li>
+        {% endfor %}
+      </ul>
+      <a class="btn btn-light" href="{{ url_for('provider.subscription') }}">Manage Subscription</a>
+    </div>
+
+    <h2>Incoming Leads</h2>
+    <div class="grid-cards">
+      {% for lead in leads %}
+        <article class="card">
+          <h3>{{ lead.project }}</h3>
+          <p>Postcode: {{ lead.postcode }}</p>
+          <p>Urgency: {{ lead.urgency|title }}</p>
+          <button class="btn btn-primary">Open Chat</button>
+        </article>
+      {% endfor %}
+    </div>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Active Conversations</h3>
+    <ul class="provider-list">
+      {% for chat in chats %}
+        <li>
+          <strong>{{ chat.customer }}</strong>
+          <p>{{ chat.latest }}</p>
+          <small>Pinboard items: {{ chat.pinboard_count }} | Unread: {{ chat.provider_unread }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

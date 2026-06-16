@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Consumer Chat{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <div class="portal-brand-lockup">
+    <img class="portal-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
+  </div>
+  <h1>Consumer Portal</h1>
+  <p>Talk to Marley to describe your problem and get instant local matches.</p>
+</section>
+
+<section class="chat-shell">
+  <article class="chat-window">
+    <div class="chat-header">
+      <div>
+        <h2 class="chat-title-with-icon">
+          <img class="chat-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+          Marley Concierge
+        </h2>
+        <p>Live triage and postcode matching</p>
+      </div>
+      <a class="btn btn-light" href="{{ url_for('consumer.search') }}">Manual Search</a>
+    </div>
+
+    <div class="chat-log">
+      {% for msg in chat_log %}
+        <div class="bubble-row {{ msg.sender }}">
+          {% if msg.sender == 'marley' %}
+            <img class="chat-bubble-avatar" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+          {% endif %}
+          <div class="bubble">{{ msg.text }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <form class="chat-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="message" type="text" placeholder="Type: I have a leaky pipe in SW1A..." autocomplete="off" required>
+      <button class="btn btn-primary btn-icon-text" type="submit">
+        <img class="btn-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+        Send
+      </button>
+    </form>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Recommended Providers</h3>
+    {% if recommendations %}
+      <ul class="provider-list">
+        {% for p in recommendations %}
+          <li>
+            <div class="provider-title">
+              <strong>{{ p.name }}</strong>
+              {% if p.marleys_choice %}
+                <span class="badge badge-gold">Marley's Choice</span>
+              {% endif %}
+              {% if p.verified %}
+                <span class="badge">Verified</span>
+              {% endif %}
+            </div>
+            <p>Tier: {{ p.tier|title }} | Coverage: {{ p.postcodes|join(', ') }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No recommendations yet. Describe what you need and provide a UK postcode.</p>
+    {% endif %}
+
+    <h3>Quick Intents</h3>
+    <ul class="intent-list">
+      {% for slug, intent in service_intents.items() %}
+        <li>
+          <strong>{{ intent.name }}</strong>
+          <small>{{ intent.branch }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Local Services Concierge{% endblock %}
+
+{% block content %}
+<!-- Section 1: Hero Portal Header -->
+<section class="hero portal-hero">
+  <!-- Left Side: Hero Introductions -->
+  <div class="hero-left">
+    <div class="portal-brand-lockup hero-brand-lockup">
+      <img class="portal-logo hero-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
+    </div>
+    <div class="status-pill">
+      <span class="status-pulse"></span>
+      <span class="status-text">UK-Wide Coverage</span>
+    </div>
+    <p class="eyebrow">UK Local Services Concierge</p>
+    <h1>Find trusted local help by chatting with Marley.</h1>
+    <p class="subtitle">AskMarley combines postcode-aware provider discovery, real-time chatbot matching, and project clipboard management in one streamlined interface.</p>
+    
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('consumer.chat') }}">
+        <img class="btn-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+        Open Consumer Chat
+      </a>
+      <a class="btn btn-light" href="{{ url_for('consumer.search') }}">
+        <!-- Search Glass Icon -->
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Manual Search
+      </a>
+    </div>
+  </div>
+
+  <!-- Right Side: Portal Shortcuts Card -->
+  <aside class="info-card shortcut-panel">
+    <h3>Portal Shortcuts</h3>
+    <p class="panel-intro-text">Jump directly to your active dashboards or workspace portals.</p>
+    
+    <div class="shortcut-list">
+      <!-- Shortcut 1: Clipboard -->
+      <a href="{{ url_for('consumer.clipboard') }}" class="shortcut-item">
+        <div class="shortcut-icon clipboard-accent">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-title">Consumer Clipboard</span>
+          <span class="shortcut-description">Review pinned service selections & draft projects.</span>
+        </div>
+        <div class="shortcut-arrow">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+
+      <!-- Shortcut 2: Provider Login -->
+      <a href="{{ url_for('auth.login') }}" class="shortcut-item">
+        <div class="shortcut-icon provider-accent">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div class="shortcut-text">
+          <span class="shortcut-title">Provider Hub</span>
+          <span class="shortcut-description">Manage listing data, settings & incoming leads.</span>
+        </div>
+        <div class="shortcut-arrow">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+
+      <!-- Shortcut 3: Admin Operations -->
+      {% if is_admin_user %}
+        <a href="{{ url_for('admin.dashboard') }}" class="shortcut-item admin-item">
+          <div class="shortcut-icon admin-accent">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div class="shortcut-text">
+            <span class="shortcut-title">Super Admin Ops</span>
+            <span class="shortcut-description">System configuration, databases & audit parameters.</span>
+          </div>
+          <div class="shortcut-arrow">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </a>
+      {% endif %}
+    </div>
+  </aside>
+</section>
+
+<!-- Section 2: Trust & Scale Metrics Strip -->
+<section class="trust-strip">
+  <div class="stat-item">
+    <span class="stat-number">14,200+</span>
+    <span class="stat-label">Providers Matched</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-number">99.4%</span>
+    <span class="stat-label">UK Postcode Coverage</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-number">&lt; 90 Secs</span>
+    <span class="stat-label">Average Connection Time</span>
+  </div>
+</section>
+
+<!-- Section 3: Visual Step-by-Step Flow -->
+<section class="how-it-works">
+  <div class="section-header">
+    <span class="section-eyebrow">Simplicity First</span>
+    <h2>How AskMarley Works</h2>
+    <p>We bypass lengthy search forms by matching you with professionals through conversational intelligence.</p>
+  </div>
+  
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num-badge">1</div>
+      <h4>State Your Task</h4>
+      <p>Describe what you need in plain terms. Marley parses details like trade requirements, timeline, and job scope.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num-badge">2</div>
+      <h4>Target Postcodes</h4>
+      <p>Our mapping system screens certified professionals registered specifically inside your immediate local postcode radius.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num-badge">3</div>
+      <h4>Build Your Clipboard</h4>
+      <p>Organise and pin your matching candidates to a temporary workspace panel without committing to a hire immediately.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Value Proposition & Security Grid -->
+<section class="benefits-section">
+  <div class="section-header">
+    <span class="section-eyebrow">Key Advantages</span>
+    <h2>Built For Modern Service Discovery</h2>
+  </div>
+
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </div>
+      <h4>Vetted Professionals</h4>
+      <p>Every listing on AskMarley is verified through business checks, public registration numbers, and dynamic customer reviews.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <h4>Conversational Directness</h4>
+      <p>Skip phone tag. Marley helps you pinpoint the exact trade specifications required for your property or maintenance project.</p>
+    </div>
+
+    <div class="benefit-card">
+      <div class="benefit-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h4>Clipboard Management</h4>
+      <p>Compare quotes, write private review notes, and archive past service hires safely within a single dashboard.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: Trust Verification Testimonial -->
+<section class="testimonial-section">
+  <div class="testimonial-content">
+    <div class="star-rating">★★★★★</div>
+
+<blockquote class="testimonial-quote">
+      The Best Review's Ever!
+</blockquote>
+    <div class="testimonial-author">
+      <span class="author-name">Client</span>
+      <span class="author-location">Homeowner — Bristol, UK</span>
+    </div>
+  </div>
+</section>
+
+<!-- Self-Contained Landing Page Layout Styles -->
+<style>
+  .portal-hero {
+    align-items: center;
+    gap: 3rem !important;
+    margin-bottom: 3.5rem;
+  }
+
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-brand-lockup {
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    border: 2px solid rgba(6, 26, 64, 0.08);
+    box-shadow: var(--shadow);
+    object-fit: cover;
+  }
+
+  .btn-icon-image {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  /* Interactive Live Badge */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(6, 26, 64, 0.04);
+    border: 1px solid rgba(6, 26, 64, 0.06);
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+
+  .status-pulse {
+    width: 6px;
+    height: 6px;
+    background-color: var(--crimson);
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .status-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid var(--crimson);
+    animation: pulse 1.6s ease-out infinite;
+  }
+
+  .status-text {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--royal-navy);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Buttons & SVG styling */
+  .btn-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Redesigned Shortcuts Column */
+  .shortcut-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.75rem !important;
+  }
+
+  .panel-intro-text {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.4;
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    padding: 1rem;
+    background: #fafbfe;
+    border: 1px solid rgba(6, 26, 64, 0.05);
+    border-radius: var(--radius-md);
+    transition: var(--transition-smooth);
+  }
+
+  .shortcut-item:hover {
+    background: #ffffff;
+    border-color: var(--royal-navy);
+    box-shadow: var(--shadow);
+    transform: translateX(4px);
+  }
+
+  .shortcut-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Semantic Accent Colors for Icon Containers */
+  .clipboard-accent {
+    background: rgba(6, 26, 64, 0.05);
+    color: var(--royal-navy);
+  }
+
+  .provider-accent {
+    background: rgba(193, 18, 31, 0.05);
+    color: var(--crimson);
+  }
+
+  .admin-accent {
+    background: rgba(212, 175, 55, 0.12);
+    color: #856404;
+  }
+
+  .shortcut-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .shortcut-text {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    line-height: 1.35;
+  }
+
+  .shortcut-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-main);
+    transition: var(--transition-smooth);
+  }
+
+  .shortcut-item:hover .shortcut-title {
+    color: var(--royal-navy);
+  }
+
+  .shortcut-description {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+  }
+
+  .shortcut-arrow {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: var(--transition-smooth);
+  }
+
+  .shortcut-arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .shortcut-item:hover .shortcut-arrow {
+    color: var(--royal-navy);
+    opacity: 1;
+    transform: translateX(2px);
+  }
+
+  .admin-item:hover {
+    border-color: var(--champagne-gold);
+  }
+
+  .admin-item:hover .shortcut-title {
+    color: #856404;
+  }
+
+  /* ==========================================================================
+     Trust & Scale Metrics Strip
+     ========================================================================== */
+  .trust-strip {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: white;
+    border: 1px solid rgba(6, 26, 64, 0.06);
+    padding: 1.5rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin-bottom: 4rem;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--royal-navy);
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 40px;
+    background-color: rgba(6, 26, 64, 0.08);
+  }
+
+  /* ==========================================================================
+     Standardized Section Header Elements
+     ========================================================================== */
+  .section-header {
+    text-align: center;
+    max-width: 650px;
+    margin: 0 auto 3rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.85rem;
+    margin: 0.25rem 0 0.75rem;
+  }
+
+  .section-header p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .section-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--crimson);
+    letter-spacing: 0.08em;
+  }
+
+  /* ==========================================================================
+     How It Works Grid
+     ========================================================================== */
+  .how-it-works {
+    margin-bottom: 4.5rem;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .step-card {
+    background: white;
+    border: 1px solid rgba(6, 26, 64, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem 1.75rem;
+    position: relative;
+    box-shadow: var(--shadow);
+    transition: var(--transition-smooth);
+  }
+
+  .step-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(6, 26, 64, 0.15);
+  }
+
+  .step-num-badge {
+    position: absolute;
+    top: -15px;
+    left: 1.5rem;
+    background: var(--royal-navy);
+    color: var(--ice-white);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 8px rgba(6, 26, 64, 0.15);
+  }
+
+  .step-card h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ==========================================================================
+     Core Benefits / USPs Grid
+     ========================================================================== */
+  .benefits-section {
+    margin-bottom: 4.5rem;
+  }
+
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .benefit-card {
+    background: transparent;
+    border: 1px solid rgba(6, 26, 64, 0.06);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: var(--transition-smooth);
+  }
+
+  .benefit-card:hover {
+    background: white;
+    box-shadow: var(--shadow);
+    border-color: rgba(6, 26, 64, 0.12);
+  }
+
+  .benefit-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    background: rgba(193, 18, 31, 0.05);
+    color: var(--crimson);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .benefit-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .benefit-card h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .benefit-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ==========================================================================
+     Testimonial Component
+     ========================================================================== */
+  .testimonial-section {
+    background: var(--royal-navy);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2.5rem;
+    color: var(--ice-white);
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(6, 26, 64, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .testimonial-section::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 20px;
+    font-size: 12rem;
+    font-family: serif;
+    color: rgba(255, 255, 255, 0.03);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .testimonial-content {
+    max-width: 750px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .star-rating {
+    color: var(--champagne-gold);
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.25rem;
+  }
+
+  .testimonial-quote {
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    color: rgba(247, 250, 255, 0.95);
+  }
+
+  .testimonial-author {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .author-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .author-location {
+    font-size: 0.75rem;
+    color: rgba(247, 250, 255, 0.6);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  /* ==========================================================================
+     Local Keyframe Animations
+     ========================================================================== */
+  @keyframes pulse {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1.8);
+      opacity: 0;
+    }
+  }
+
+  /* ==========================================================================
+     Responsive Adjustments
+     ========================================================================== */
+  @media (max-width: 900px) {
+    .portal-hero {
+      gap: 1.5rem !important;
+      margin-bottom: 2rem;
+    }
+
+    .trust-strip {
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .stat-divider {
+      width: 60px;
+      height: 1px;
+    }
+
+    .steps-grid, .benefits-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .step-card {
+      padding: 2.25rem 1.25rem 1.5rem;
+    }
+
+    .testimonial-section {
+      padding: 2rem 1.5rem;
+    }
+
+    .testimonial-quote {
+      font-size: 1rem;
+    }
+  }
+</style>
+{% endblock %}

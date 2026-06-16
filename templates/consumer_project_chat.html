@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Project Chat{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>{{ project.name }} Chat</h1>
+  <p>Realtime-style collaboration thread with pinboard references and moderation safeguards.</p>
+</section>
+
+<section class="chat-shell">
+  <article class="chat-window">
+    <div class="chat-header">
+      <div>
+        <h2>Project Thread</h2>
+        <p>Viewing as: {{ viewer|title }}</p>
+      </div>
+      <div class="tier-links">
+        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='consumer') }}">Consumer View</a>
+        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='provider') }}">Provider View</a>
+        <a href="{{ url_for('consumer.clipboard') }}">Back to Clipboard</a>
+      </div>
+    </div>
+
+    <div class="chat-log">
+      {% for msg in thread.messages %}
+        <div class="bubble-row {{ 'user' if msg.sender == viewer else 'marley' }}">
+          <div class="bubble">
+            <strong>{{ msg.sender|title }}</strong><br>
+            {{ msg.text }}
+            {% if msg.flagged %}
+              <div><span class="badge" style="background:#ffe8ea;border-color:#f3b1b8;color:#8f0e1b;">Flagged for moderation</span></div>
+            {% endif %}
+            {% if msg.sender != 'marley' %}
+              <form method="post" action="{{ url_for('consumer.project_chat_report', project_id=project.id, viewer=viewer) }}" style="margin-top:0.35rem;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="message_index" value="{{ loop.index0 }}">
+                <input type="hidden" name="reason" value="User report from project chat">
+                <button class="btn btn-light" type="submit">Report</button>
+              </form>
+            {% endif %}
+            <small class="muted">{{ msg.timestamp }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <form class="chat-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="message" type="text" placeholder="Send a message in this project thread" autocomplete="off">
+      <button class="btn btn-primary" type="submit">Send</button>
+    </form>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Thread Pinboard</h3>
+    {% if thread.pinboard %}
+      <ul class="provider-list">
+        {% for pin in thread.pinboard %}
+          <li>{{ pin }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No thread pins yet.</p>
+    {% endif %}
+
+    <form class="admin-form" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="pin_label" placeholder="Pin item to this thread">
+      <button class="btn btn-light" type="submit">Add Pin</button>
+    </form>
+
+    <p class="muted">Unread provider notifications: {{ thread.notifications.provider }}<br>Unread consumer notifications: {{ thread.notifications.consumer }}</p>
+  </aside>
+</section>
+{% endblock %}
