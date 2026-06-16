@@ -110,29 +110,43 @@ body {
 .portal-nav {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 1;
+  margin-left: 0.8rem;
+}
+
+.nav-links,
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 /* Nav links configured as interactive pills */
-.portal-nav a, .nav-btn {
+.portal-nav a,
+.nav-btn {
   color: var(--ice-white);
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.4rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.45rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
   transition: var(--transition-smooth);
   display: inline-flex;
   align-items: center;
 }
 
-.portal-nav a:hover, .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+.portal-nav a:hover,
+.nav-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+  border-color: rgba(255, 255, 255, 0.34);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -12px rgba(255, 255, 255, 0.65);
 }
 
 .secondary-btn {
@@ -201,6 +215,41 @@ body {
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
   font-size: 0.82rem;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.mobile-nav-toggle .bar {
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: #ffffff;
+  transition: var(--transition-smooth);
+}
+
+.mobile-nav-toggle.active .bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-nav-toggle.active .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-nav-toggle.active .bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* ==========================================================================
@@ -859,6 +908,65 @@ fieldset legend {
   .split,
   .auth-shell {
     grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    padding: 0.8rem 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand-text {
+    font-size: 1.05rem;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .portal-nav {
+    width: 100%;
+    display: none;
+    margin-left: 0;
+    background: rgba(10, 28, 66, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 0.9rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+  }
+
+  .portal-nav.open {
+    display: flex;
+  }
+
+  .nav-links,
+  .nav-auth {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+
+  .portal-nav a,
+  .nav-btn,
+  .inline-logout .btn,
+  .nav-auth .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .user-chip {
+    border-radius: 14px;
+    justify-content: center;
+    padding: 0.65rem 0.8rem;
   }
 
   .chat-window {

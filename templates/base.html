@@ -23,7 +23,7 @@
       </a>
 
       <!-- Mobile Navigation Hamburger -->
-      <button class="mobile-nav-toggle" aria-label="Toggle navigation menu" onclick="toggleMobileMenu()">
+      <button class="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="portalNav" type="button">
         <span class="bar"></span>
         <span class="bar"></span>
         <span class="bar"></span>
@@ -73,7 +73,7 @@
               <div class="flash flash-{{ category }}">
                 <span class="flash-icon"></span>
                 <span class="flash-message">{{ message }}</span>
-                <button class="flash-close-btn" onclick="this.parentElement.remove()" aria-label="Close notification">&times;</button>
+                <button class="flash-close-btn" type="button" aria-label="Close notification">&times;</button>
               </div>
             {% endfor %}
           </section>
@@ -84,24 +84,6 @@
       {% block content %}{% endblock %}
     </main>
 
-    <script>
-      function toggleMobileMenu() {
-        const nav = document.getElementById('portalNav');
-        const toggle = document.querySelector('.mobile-nav-toggle');
-        nav.classList.toggle('open');
-        toggle.classList.toggle('active');
-      }
-
-      window.addEventListener('DOMContentLoaded', () => {
-        const flashes = document.querySelectorAll('.flash');
-        flashes.forEach(flash => {
-          setTimeout(() => {
-            flash.style.opacity = '0';
-            flash.style.transform = 'translateY(-10px)';
-            setTimeout(() => flash.remove(), 400);
-          }, 6000);
-        });
-      });
-    </script>
+    <script src="{{ url_for('static', filename='base.js') }}"></script>
   </body>
 </html>
