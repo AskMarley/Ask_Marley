@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from askmarley.data import FLAGGED_CHATS, PROVIDER_SIGNUPS, TAXONOMY
 from askmarley.extensions import db
@@ -76,7 +76,7 @@ def _record_taxonomy_version(session, entry_id, actor, reason, before_path, afte
             "before_path": before_path,
             "after_path": after_path,
             "version": version,
-            "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
+            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         },
     )
     session["taxonomy_versions"] = versions[:100]
@@ -253,7 +253,7 @@ def record_audit(
     before_state,
     after_state,
 ):
-    timestamp = datetime.now(UTC).isoformat(timespec="seconds")
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     entry = {
         "timestamp": timestamp,
         "actor": actor,

@@ -1,7 +1,7 @@
 import secrets
 import time
 from collections import defaultdict, deque
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import abort, request, session
 
@@ -73,7 +73,7 @@ def security_headers(response):
 
 
 def utc_now():
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 def cache_is_fresh(timestamp, ttl_seconds):

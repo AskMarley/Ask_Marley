@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from askmarley.data import PROVIDERS
 from askmarley.services.admin_ops import create_moderation_case
@@ -95,7 +95,7 @@ def get_thread(session, project_id):
             {
                 "sender": "marley",
                 "text": "Thread opened. Use this space to coordinate updates and quotes.",
-                "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
+                "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "flagged": False,
                 "read_by": ["consumer", "provider"],
             }
@@ -117,7 +117,7 @@ def append_chat_message(session, project_id, sender, text):
     message = {
         "sender": sender,
         "text": text,
-        "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
+        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "flagged": flagged,
         "read_by": [sender],
     }
