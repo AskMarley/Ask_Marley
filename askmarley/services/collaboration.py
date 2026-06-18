@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from askmarley.data import PROVIDERS
 from askmarley.services.admin_ops import create_moderation_case
+from askmarley.extensions import db
+from askmarley.models import Project, ProjectPinboardItem, ProjectSavedProvider, User
 
 FLAGGED_TERMS = {"scam", "abuse", "idiot", "fraud", "threat"}
 
@@ -27,13 +29,57 @@ def _default_projects():
     ]
 
 
+def _get_persistent_consumer(session):
+    user_id = session.get("auth_user_id")
+    if not user_id:
+        return None
+
+    user = db.session.get(User, user_id)
+    if not user or user.role != "consumer":
+        return None
+    return user
+
+
+def _project_to_dict(project):
+    saved_providers = [item.provider_name for item in project.saved_provider_links]
+    pinboard_items = [item.label for item in project.pinboard_links]
+    timeline = ["Created project"]
+    if saved_providers:
+        timeline.append(f"Saved providers: {len(saved_providers)}")
+    if pinboard_items:
+        timeline.append(f"Pinned items: {len(pinboard_items)}")
+
+    return {
+        "id": project.id,
+        "name": project.name,
+        "status": project.status,
+        "saved_providers": saved_providers,
+        "pinboard_items": pinboard_items,
+        "timeline": timeline,
+    }
+
+
 def get_projects(session):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        projects = (
+            Project.query.filter_by(user_id=consumer.id)
+            .order_by(Project.created_at.desc())
+            .all()
+        )
+        return [_project_to_dict(project) for project in projects]
+
     projects = session.setdefault("clipboard_projects", _default_projects())
     session.modified = True
     return projects
 
 
 def get_project_by_id(session, project_id):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        return _project_to_dict(project) if project else None
+
     for project in get_projects(session):
         if project["id"] == project_id:
             return project
@@ -41,6 +87,17 @@ def get_project_by_id(session, project_id):
 
 
 def create_project(session, project_name):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        new_project = Project(
+            user_id=consumer.id,
+            name=project_name,
+            status="Shortlisting",
+        )
+        db.session.add(new_project)
+        db.session.commit()
+        return _project_to_dict(new_project)
+
     projects = get_projects(session)
     next_id = max((project["id"] for project in projects), default=0) + 1
     new_project = {
@@ -58,6 +115,28 @@ def create_project(session, project_name):
 
 
 def save_provider_to_project(session, project_id, provider_name):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return False
+
+        exists = ProjectSavedProvider.query.filter_by(
+            project_id=project.id,
+            provider_name=provider_name,
+        ).first()
+        if exists:
+            return True
+
+        db.session.add(
+            ProjectSavedProvider(
+                project_id=project.id,
+                provider_name=provider_name,
+            )
+        )
+        db.session.commit()
+        return True
+
     project = get_project_by_id(session, project_id)
     if not project:
         return False
@@ -70,6 +149,21 @@ def save_provider_to_project(session, project_id, provider_name):
 
 
 def add_pinboard_item(session, project_id, item_label):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return False
+
+        db.session.add(
+            ProjectPinboardItem(
+                project_id=project.id,
+                label=item_label,
+            )
+        )
+        db.session.commit()
+        return True
+
     project = get_project_by_id(session, project_id)
     if not project:
         return False

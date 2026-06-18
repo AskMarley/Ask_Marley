@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Consumer Dashboard{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <h1>Consumer Dashboard</h1>
+  <p>Your central workspace for projects, provider shortlists, and collaboration notes.</p>
+</section>
+
+<section class="trust-strip">
+  <div class="stat-item">
+    <span class="stat-number">{{ stats.project_count }}</span>
+    <span class="stat-label">Active Projects</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-number">{{ stats.saved_provider_count }}</span>
+    <span class="stat-label">Saved Providers</span>
+  </div>
+  <div class="stat-divider"></div>
+  <div class="stat-item">
+    <span class="stat-number">{{ stats.pinboard_count }}</span>
+    <span class="stat-label">Pinboard Items</span>
+  </div>
+</section>
+
+<section class="split">
+  <article>
+    <div class="tier-box">
+      <h3>Plan: {{ consumer_sub.plan.label }}</h3>
+      <p><strong>Selected Tier:</strong> {{ consumer_sub.selected_tier|title }} | <strong>Billing:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
+      <p>{{ consumer_sub.plan.price }} | Max Projects: {{ consumer_sub.plan.max_projects if consumer_sub.plan.max_projects != 999 else 'Unlimited' }}</p>
+      <div class="hero-actions" style="margin-top: 1rem;">
+        <a class="btn btn-primary" href="{{ url_for('consumer.clipboard') }}">Open Clipboard</a>
+        <a class="btn btn-light" href="{{ url_for('consumer.chat') }}">Open Chat</a>
+      </div>
+    </div>
+
+    <h2>Recent Projects</h2>
+    <div class="grid-cards">
+      {% if recent_projects %}
+        {% for project in recent_projects %}
+          <article class="card">
+            <h3>{{ project.name }}</h3>
+            <p>Status: {{ project.status }}</p>
+            <p><strong>Saved Providers:</strong> {{ project.saved_providers|length }}</p>
+            <p><strong>Pins:</strong> {{ project.pinboard_items|length }}</p>
+            <a class="btn btn-light" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="card">
+          <h3>No projects yet</h3>
+          <p>Create your first project to start saving providers and collaboration notes.</p>
+          <a class="btn btn-primary" href="{{ url_for('consumer.clipboard') }}">Create First Project</a>
+        </article>
+      {% endif %}
+    </div>
+  </article>
+
+  <aside class="chat-sidepanel">
+    <h3>Quick Actions</h3>
+    <ul class="provider-list">
+      <li>
+        <strong>Start Matching</strong>
+        <p>Use Marley chat to discover local providers by task and postcode.</p>
+        <a href="{{ url_for('consumer.chat') }}">Go to Consumer Chat</a>
+      </li>
+      <li>
+        <strong>Manual Lookup</strong>
+        <p>Search service categories and branches directly.</p>
+        <a href="{{ url_for('consumer.search') }}">Open Manual Search</a>
+      </li>
+      <li>
+        <strong>Manage Plan</strong>
+        <p>Upgrade your subscription to unlock more project actions.</p>
+        <a href="{{ url_for('consumer.subscription') }}">Manage Subscription</a>
+      </li>
+    </ul>
+  </aside>
+</section>
+{% endblock %}

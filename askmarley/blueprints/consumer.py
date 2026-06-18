@@ -264,6 +264,30 @@ def clipboard():
     )
 
 
+@consumer_bp.get("/dashboard")
+@role_required("consumer")
+def dashboard():
+    consumer_sub = get_consumer_subscription(session)
+    projects = get_projects(session)
+
+    total_saved_providers = sum(len(project["saved_providers"]) for project in projects)
+    total_pinboard_items = sum(len(project["pinboard_items"]) for project in projects)
+
+    stats = {
+        "project_count": len(projects),
+        "saved_provider_count": total_saved_providers,
+        "pinboard_count": total_pinboard_items,
+    }
+
+    recent_projects = projects[:4]
+    return render_template(
+        "consumer_dashboard.html",
+        consumer_sub=consumer_sub,
+        stats=stats,
+        recent_projects=recent_projects,
+    )
+
+
 @consumer_bp.post("/clipboard/<int:project_id>/save-provider")
 @role_required("consumer")
 def clipboard_save_provider(project_id):

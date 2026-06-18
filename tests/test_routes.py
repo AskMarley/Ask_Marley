@@ -59,6 +59,14 @@ def test_clipboard_create_project():
     assert b"Project created" in response.data
 
 
+def test_consumer_dashboard_route():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    response = client.get("/consumer/dashboard")
+    assert response.status_code == 200
+    assert b"Consumer Dashboard" in response.data
+
+
 def test_project_chat_post_message():
     client = app.test_client()
     _set_auth_user(client, role="consumer")
@@ -301,6 +309,14 @@ def test_admin_link_visible_for_admin_session():
 
 
 def test_register_persists_password_hash():
+    with app.app_context():
+        existing = User.query.filter_by(email="persist.check@askmarley.local").first()
+        if existing:
+            from askmarley.extensions import db
+
+            db.session.delete(existing)
+            db.session.commit()
+
     client = app.test_client()
     token = _set_csrf(client)
     response = client.post(
@@ -309,12 +325,14 @@ def test_register_persists_password_hash():
             "full_name": "Persist Check",
             "email": "persist.check@askmarley.local",
             "role": "consumer",
+            "consumer_postcode": "SW1A 1AA",
             "password": "persist-secret",
             "csrf_token": token,
         },
         follow_redirects=True,
     )
     assert response.status_code == 200
+    assert b"Consumer Dashboard" in response.data
     with app.app_context():
         user = User.query.filter_by(email="persist.check@askmarley.local").first()
         assert user is not None

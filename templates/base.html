@@ -32,7 +32,11 @@
       <!-- Portal Navigation (Responsive Flex Grid) -->
       <nav class="portal-nav" id="portalNav">
         <div class="nav-links">
-          <a href="{{ url_for('consumer.chat') }}" class="nav-btn">Consumer</a>
+          {% if current_user and current_user.role == 'consumer' %}
+            <a href="{{ url_for('consumer.dashboard') }}" class="nav-btn">Dashboard</a>
+          {% else %}
+            <a href="{{ url_for('consumer.chat') }}" class="nav-btn">Consumer</a>
+          {% endif %}
           {% if current_user and current_user.role == 'provider' %}
             <a href="{{ url_for('provider.dashboard') }}" class="nav-btn">Provider</a>
           {% else %}

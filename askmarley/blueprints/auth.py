@@ -70,7 +70,7 @@ def register():
         flash("Account created and signed in.", "success")
         if user.role == "provider":
             return redirect(url_for("provider.dashboard"))
-        return redirect(url_for("consumer.clipboard"))
+        return redirect(url_for("consumer.dashboard"))
 
     return render_template("auth_register.html")
 
@@ -102,7 +102,7 @@ def login():
             return redirect(url_for("provider.dashboard"))
         if user.role in {"admin", "super_admin"}:
             return redirect(url_for("admin.dashboard"))
-        return redirect(url_for("consumer.clipboard"))
+        return redirect(url_for("consumer.dashboard"))
 
     return render_template("auth_login.html")
 
@@ -133,4 +133,4 @@ def demo_login():
         return redirect(url_for("provider.dashboard"))
     if target == "admin":
         return redirect(url_for("admin.dashboard"))
-    return redirect(url_for("consumer.clipboard"))
+    return redirect(url_for("consumer.dashboard"))

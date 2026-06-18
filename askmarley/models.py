@@ -75,6 +75,44 @@ class Project(TimestampMixin, db.Model):
     user = db.relationship("User", backref=db.backref("projects", lazy=True))
 
 
+class ProjectSavedProvider(TimestampMixin, db.Model):
+    __tablename__ = "project_saved_providers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False, index=True)
+    provider_name = db.Column(db.String(140), nullable=False)
+
+    project = db.relationship(
+        "Project",
+        backref=db.backref(
+            "saved_provider_links",
+            lazy=True,
+            cascade="all, delete-orphan",
+        ),
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("project_id", "provider_name", name="uq_project_saved_provider"),
+    )
+
+
+class ProjectPinboardItem(TimestampMixin, db.Model):
+    __tablename__ = "project_pinboard_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False, index=True)
+    label = db.Column(db.String(255), nullable=False)
+
+    project = db.relationship(
+        "Project",
+        backref=db.backref(
+            "pinboard_links",
+            lazy=True,
+            cascade="all, delete-orphan",
+        ),
+    )
+
+
 class ChatThread(TimestampMixin, db.Model):
     __tablename__ = "chat_threads"
 
