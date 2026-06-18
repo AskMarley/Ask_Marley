@@ -1,4 +1,5 @@
 import click
+import os
 from flask import Flask
 from sqlalchemy import inspect
 
@@ -23,7 +24,14 @@ from askmarley.services.security import (
 def create_app(config_name=None):
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
-    selected_config = config_name or "development"
+    env_config = (os.getenv("FLASK_ENV") or "development").strip().lower()
+    alias_map = {
+        "dev": "development",
+        "prod": "production",
+    }
+    selected_config = alias_map.get((config_name or env_config), (config_name or env_config))
+    if selected_config not in CONFIG_MAP:
+        selected_config = "development"
     app.config.from_object(CONFIG_MAP[selected_config])
 
     db.init_app(app)
@@ -59,7 +67,9 @@ def create_app(config_name=None):
         return security_headers(response)
 
     with app.app_context():
-        db.create_all()
+        if selected_config in {"development", "testing"}:
+            # Keep local/dev bootstrapping simple while production relies on Alembic.
+            db.create_all()
         inspector = inspect(db.engine)
         if inspector.has_table("users"):
             user_columns = {column["name"] for column in inspector.get_columns("users")}
