@@ -41,7 +41,9 @@ class Provider(TimestampMixin, db.Model):
     name = db.Column(db.String(140), nullable=False)
     service_slug = db.Column(db.String(80), nullable=False, index=True)
     tier = db.Column(db.String(30), nullable=False, default="basic")
+    billing_status = db.Column(db.String(30), nullable=False, default="active")
     verified = db.Column(db.Boolean, nullable=False, default=False)
+    suspended = db.Column(db.Boolean, nullable=False, default=False)
     marleys_choice = db.Column(db.Boolean, nullable=False, default=False)
 
 
@@ -199,3 +201,29 @@ class TaxonomyEntry(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     branch_path = db.Column(db.String(255), unique=True, nullable=False)
     active = db.Column(db.Boolean, nullable=False, default=True)
+    version = db.Column(db.Integer, nullable=False, default=1)
+
+
+class TaxonomyVersion(TimestampMixin, db.Model):
+    __tablename__ = "taxonomy_versions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    entry_id = db.Column(db.Integer, db.ForeignKey("taxonomy_entries.id"), nullable=False, index=True)
+    actor = db.Column(db.String(120), nullable=False)
+    reason = db.Column(db.String(255), nullable=False)
+    before_path = db.Column(db.String(255), nullable=True)
+    after_path = db.Column(db.String(255), nullable=False)
+    version = db.Column(db.Integer, nullable=False)
+
+
+class ModerationCase(TimestampMixin, db.Model):
+    __tablename__ = "moderation_cases"
+
+    id = db.Column(db.Integer, primary_key=True)
+    case_id = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    reason = db.Column(db.String(255), nullable=False)
+    participants = db.Column(db.String(255), nullable=False)
+    severity = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="open")
+    source = db.Column(db.String(40), nullable=False, default="system")
+    reported_by = db.Column(db.String(120), nullable=False, default="system")

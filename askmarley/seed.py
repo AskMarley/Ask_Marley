@@ -21,7 +21,9 @@ def seed_baseline_data():
             name=provider["name"],
             service_slug=provider["service_slug"],
             tier=provider["tier"],
+            billing_status=provider.get("billing_status", "active"),
             verified=provider["verified"],
+            suspended=False,
             marleys_choice=provider["marleys_choice"],
         )
         db.session.add(p)

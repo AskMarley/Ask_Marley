@@ -1,30 +1,32 @@
 import csv
 import io
-import json
 from collections import Counter
 
 from askmarley.services.admin_ops import get_moderation_cases, get_provider_registry
-from askmarley.services.collaboration import get_projects
 from askmarley.services.security import cache_is_fresh, utc_now
-from askmarley.services.subscriptions import (
-    get_consumer_subscription,
-    get_provider_subscription,
+from askmarley.models import (
+    ChatMessage,
+    ChatThread,
+    ConciergeMessage,
+    Project,
+    Provider,
+    Subscription,
+    User,
 )
 
 _ANALYTICS_CACHE = {}
 
 
 def _analytics_cache_key(session):
-    snapshot = {
-        "projects": session.get("clipboard_projects", []),
-        "provider_registry": session.get("provider_registry", []),
-        "moderation_cases": session.get("moderation_cases", []),
-        "consumer_subscription": session.get("consumer_subscription", {}),
-        "provider_subscription": session.get("provider_subscription", {}),
-        "chat_log": session.get("chat_log", []),
-        "project_threads": session.get("project_threads", {}),
+    stats = {
+        "projects": Project.query.count(),
+        "providers": Provider.query.count(),
+        "threads": ChatThread.query.count(),
+        "messages": ChatMessage.query.count(),
+        "concierge_messages": ConciergeMessage.query.count(),
+        "subscriptions": Subscription.query.count(),
     }
-    return json.dumps(snapshot, sort_keys=True, default=str)
+    return "|".join(f"{key}:{value}" for key, value in sorted(stats.items()))
 
 
 def _parse_postcodes(postcode_text):
@@ -37,16 +39,11 @@ def build_admin_analytics(session):
     if cached and cache_is_fresh(cached["timestamp"], 30):
         return cached["payload"]
 
-    projects = get_projects(session)
+    projects = Project.query.all()
     provider_registry = get_provider_registry(session)
     moderation_cases = get_moderation_cases(session)
-    consumer_sub = get_consumer_subscription(session)
-    provider_sub = get_provider_subscription(session)
-    chat_log = session.get("chat_log", [])
-    project_threads = session.get("project_threads", {})
 
-    active_projects = len([project for project in projects if project.get("status") != "archived"])
-
+    consumers = User.query.filter_by(role="consumer").all()
     consumer_tier_counts = {
         "free": 0,
         "student": 0,
@@ -54,10 +51,21 @@ def build_admin_analytics(session):
         "business": 0,
         "business-plus": 0,
     }
-    consumer_tier_counts[consumer_sub["effective_tier"]] += 1
+    for consumer in consumers:
+        active_sub = (
+            Subscription.query.filter_by(user_id=consumer.id)
+            .order_by(Subscription.updated_at.desc())
+            .first()
+        )
+        tier = active_sub.plan_code if active_sub else consumer.consumer_tier
+        status = active_sub.status if active_sub else "active"
+        effective_tier = "free" if status in {"past_due", "canceled"} else tier
+        if effective_tier not in consumer_tier_counts:
+            effective_tier = "free"
+        consumer_tier_counts[effective_tier] += 1
 
+    active_projects = len([project for project in projects if project.status != "archived"])
     provider_tier_counts = Counter(provider.get("tier", "basic") for provider in provider_registry)
-    provider_tier_counts[provider_sub["effective_tier"]] += 1
 
     postcode_counter = Counter()
     for provider in provider_registry:
@@ -70,19 +78,21 @@ def build_admin_analytics(session):
         for code, count in postcode_counter.most_common(5)
     ]
 
-    consumer_messages = [msg for msg in chat_log if msg.get("sender") == "user"]
+    concierge_messages = ConciergeMessage.query.all()
+    consumer_messages = [msg for msg in concierge_messages if msg.sender == "user"]
     postcode_prompts = [
-        msg for msg in chat_log if "Please share your UK postcode" in msg.get("text", "")
+        msg for msg in concierge_messages if "Please share your UK postcode" in msg.message
     ]
     recommendation_events = [
-        msg for msg in chat_log if "I found" in msg.get("text", "providers near")
+        msg for msg in concierge_messages if "I found" in msg.message
     ]
 
     open_cases = len([case for case in moderation_cases if case.get("status") in {"open", "reviewing"}])
     resolved_cases = len([case for case in moderation_cases if case.get("status") == "resolved"])
 
+    threads = ChatThread.query.all()
     thread_message_counts = [
-        len(thread.get("messages", [])) for thread in project_threads.values() if thread.get("messages")
+        ChatMessage.query.filter_by(thread_id=thread.id).count() for thread in threads
     ]
     avg_messages_per_thread = (
         round(sum(thread_message_counts) / len(thread_message_counts), 1)
@@ -111,7 +121,7 @@ def build_admin_analytics(session):
         },
         "response_metrics": {
             "avg_messages_per_thread": avg_messages_per_thread,
-            "active_threads": len(project_threads),
+            "active_threads": len(threads),
         },
         "geography_heatmap": geography_heatmap,
     }
