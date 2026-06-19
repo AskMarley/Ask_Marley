@@ -3,7 +3,15 @@ from datetime import datetime, timezone
 from askmarley.data import PROVIDERS
 from askmarley.services.admin_ops import create_moderation_case
 from askmarley.extensions import db
-from askmarley.models import Project, ProjectPinboardItem, ProjectSavedProvider, User
+from askmarley.models import (
+    ChatMessage,
+    ChatThread,
+    ChatThreadPin,
+    Project,
+    ProjectPinboardItem,
+    ProjectSavedProvider,
+    User,
+)
 
 FLAGGED_TERMS = {"scam", "abuse", "idiot", "fraud", "threat"}
 
@@ -179,6 +187,56 @@ def get_all_provider_names():
 
 
 def get_thread(session, project_id):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return None
+
+        thread = ChatThread.query.filter_by(
+            project_id=project.id,
+            consumer_user_id=consumer.id,
+        ).first()
+        if not thread:
+            thread = ChatThread(
+                project_id=project.id,
+                consumer_user_id=consumer.id,
+                provider_id=None,
+            )
+            db.session.add(thread)
+            db.session.flush()
+            db.session.add(
+                ChatMessage(
+                    thread_id=thread.id,
+                    sender_type="marley",
+                    message="Thread opened. Use this space to coordinate updates and quotes.",
+                    flagged=False,
+                )
+            )
+            db.session.commit()
+
+        messages = (
+            ChatMessage.query.filter_by(thread_id=thread.id)
+            .order_by(ChatMessage.id.asc())
+            .all()
+        )
+        pinboard = [pin.label for pin in ChatThreadPin.query.filter_by(thread_id=thread.id).all()]
+        return {
+            "messages": [
+                {
+                    "sender": msg.sender_type,
+                    "text": msg.message,
+                    "timestamp": msg.created_at.isoformat(timespec="seconds"),
+                    "flagged": msg.flagged,
+                    "read_by": ["consumer", "provider"],
+                }
+                for msg in messages
+            ],
+            "pinboard": pinboard,
+            "notifications": {"consumer": 0, "provider": 0},
+            "thread_id": thread.id,
+        }
+
     threads = session.setdefault("project_threads", {})
     thread = threads.get(str(project_id))
     if thread:
@@ -204,6 +262,42 @@ def get_thread(session, project_id):
 
 
 def append_chat_message(session, project_id, sender, text):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        thread = get_thread(session, project_id)
+        if not thread:
+            return None
+
+        lowered = text.lower()
+        flagged = any(term in lowered for term in FLAGGED_TERMS)
+        db.session.add(
+            ChatMessage(
+                thread_id=thread["thread_id"],
+                sender_type=sender,
+                message=text,
+                flagged=flagged,
+            )
+        )
+        db.session.commit()
+
+        if flagged:
+            create_moderation_case(
+                session,
+                reason="Potential abusive language detected",
+                participants=f"Project #{project_id} consumer/provider thread",
+                severity="high",
+                source="automated-detection",
+                reported_by="system",
+            )
+
+        return {
+            "sender": sender,
+            "text": text,
+            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "flagged": flagged,
+            "read_by": [sender],
+        }
+
     thread = get_thread(session, project_id)
     lowered = text.lower()
     flagged = any(term in lowered for term in FLAGGED_TERMS)
@@ -235,6 +329,10 @@ def append_chat_message(session, project_id, sender, text):
 
 
 def mark_thread_read(session, project_id, viewer):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        return
+
     thread = get_thread(session, project_id)
     for message in thread["messages"]:
         if viewer not in message["read_by"]:
@@ -244,12 +342,53 @@ def mark_thread_read(session, project_id, viewer):
 
 
 def add_thread_pin(session, project_id, item_label):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        thread = get_thread(session, project_id)
+        if not thread:
+            return
+        db.session.add(
+            ChatThreadPin(
+                thread_id=thread["thread_id"],
+                label=item_label,
+            )
+        )
+        db.session.commit()
+        return
+
     thread = get_thread(session, project_id)
     thread["pinboard"].append(item_label)
     session.modified = True
 
 
 def report_thread_message(session, project_id, message_index, reporter, reason):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        thread = get_thread(session, project_id)
+        if not thread:
+            return False
+
+        messages = (
+            ChatMessage.query.filter_by(thread_id=thread["thread_id"])
+            .order_by(ChatMessage.id.asc())
+            .all()
+        )
+        if message_index < 0 or message_index >= len(messages):
+            return False
+
+        flagged_message = messages[message_index]
+        flagged_message.flagged = True
+        db.session.commit()
+        create_moderation_case(
+            session,
+            reason=reason,
+            participants=f"Project #{project_id} consumer/provider thread",
+            severity="medium",
+            source="user-report",
+            reported_by=reporter,
+        )
+        return True
+
     thread = get_thread(session, project_id)
     if message_index < 0 or message_index >= len(thread["messages"]):
         return False
@@ -269,6 +408,33 @@ def report_thread_message(session, project_id, message_index, reporter, reason):
 
 
 def build_provider_chat_summary(session):
+    provider_user_id = session.get("auth_user_id")
+    provider_user = db.session.get(User, provider_user_id) if provider_user_id else None
+    if provider_user and provider_user.role == "provider":
+        summaries = []
+        threads = ChatThread.query.order_by(ChatThread.updated_at.desc()).all()
+        for thread in threads:
+            project = db.session.get(Project, thread.project_id)
+            if not project:
+                continue
+            latest = (
+                ChatMessage.query.filter_by(thread_id=thread.id)
+                .order_by(ChatMessage.id.desc())
+                .first()
+            )
+            if not latest:
+                continue
+            pin_count = ChatThreadPin.query.filter_by(thread_id=thread.id).count()
+            summaries.append(
+                {
+                    "customer": project.name,
+                    "latest": latest.message,
+                    "pinboard_count": pin_count,
+                    "provider_unread": 0,
+                }
+            )
+        return summaries
+
     summaries = []
     threads = session.get("project_threads", {})
     projects = {project["id"]: project for project in get_projects(session)}

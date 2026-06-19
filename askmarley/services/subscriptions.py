@@ -1,4 +1,16 @@
 from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, PROVIDER_TIERS
+from askmarley.extensions import db
+from askmarley.models import Subscription, User
+
+
+def _get_persistent_user(session, expected_role):
+    user_id = session.get("auth_user_id")
+    if not user_id:
+        return None
+    user = db.session.get(User, user_id)
+    if not user or user.role != expected_role:
+        return None
+    return user
 
 
 def _ensure_consumer_subscription(session):
@@ -26,6 +38,33 @@ def get_effective_consumer_tier(tier, billing_status):
 
 
 def get_consumer_subscription(session):
+    user = _get_persistent_user(session, "consumer")
+    if user:
+        sub = (
+            Subscription.query.filter_by(user_id=user.id)
+            .order_by(Subscription.updated_at.desc())
+            .first()
+        )
+        if not sub:
+            initial_tier = user.consumer_tier if user.consumer_tier in CONSUMER_TIERS else "individual"
+            sub = Subscription(
+                user_id=user.id,
+                plan_code=initial_tier,
+                status="active",
+            )
+            db.session.add(sub)
+            db.session.commit()
+
+        selected_tier = sub.plan_code if sub.plan_code in CONSUMER_TIERS else "free"
+        billing_status = sub.status if sub.status in BILLING_STATUSES else "active"
+        effective_tier = get_effective_consumer_tier(selected_tier, billing_status)
+        return {
+            "selected_tier": selected_tier,
+            "billing_status": billing_status,
+            "effective_tier": effective_tier,
+            "plan": CONSUMER_TIERS[effective_tier],
+        }
+
     sub = _ensure_consumer_subscription(session)
     effective_tier = get_effective_consumer_tier(sub["tier"], sub["billing_status"])
     return {
@@ -41,6 +80,24 @@ def update_consumer_subscription(session, tier, billing_status):
         tier = "free"
     if billing_status not in BILLING_STATUSES:
         billing_status = "active"
+
+    user = _get_persistent_user(session, "consumer")
+    if user:
+        sub = (
+            Subscription.query.filter_by(user_id=user.id)
+            .order_by(Subscription.updated_at.desc())
+            .first()
+        )
+        if not sub:
+            sub = Subscription(user_id=user.id, plan_code=tier, status=billing_status)
+            db.session.add(sub)
+        else:
+            sub.plan_code = tier
+            sub.status = billing_status
+        db.session.commit()
+        user.consumer_tier = tier
+        db.session.commit()
+        return
 
     session["consumer_subscription"] = {
         "tier": tier,
@@ -64,6 +121,32 @@ def get_effective_provider_tier(tier, billing_status):
 
 
 def get_provider_subscription(session):
+    user = _get_persistent_user(session, "provider")
+    if user:
+        sub = (
+            Subscription.query.filter_by(user_id=user.id)
+            .order_by(Subscription.updated_at.desc())
+            .first()
+        )
+        if not sub:
+            sub = Subscription(
+                user_id=user.id,
+                plan_code="premium",
+                status="active",
+            )
+            db.session.add(sub)
+            db.session.commit()
+
+        selected_tier = sub.plan_code if sub.plan_code in PROVIDER_TIERS else "basic"
+        billing_status = sub.status if sub.status in BILLING_STATUSES else "active"
+        effective_tier = get_effective_provider_tier(selected_tier, billing_status)
+        return {
+            "selected_tier": selected_tier,
+            "billing_status": billing_status,
+            "effective_tier": effective_tier,
+            "plan": PROVIDER_TIERS[effective_tier],
+        }
+
     sub = _ensure_provider_subscription(session)
     effective_tier = get_effective_provider_tier(sub["tier"], sub["billing_status"])
     return {
@@ -79,6 +162,22 @@ def update_provider_subscription(session, tier, billing_status):
         tier = "basic"
     if billing_status not in BILLING_STATUSES:
         billing_status = "active"
+
+    user = _get_persistent_user(session, "provider")
+    if user:
+        sub = (
+            Subscription.query.filter_by(user_id=user.id)
+            .order_by(Subscription.updated_at.desc())
+            .first()
+        )
+        if not sub:
+            sub = Subscription(user_id=user.id, plan_code=tier, status=billing_status)
+            db.session.add(sub)
+        else:
+            sub.plan_code = tier
+            sub.status = billing_status
+        db.session.commit()
+        return
 
     session["provider_subscription"] = {
         "tier": tier,

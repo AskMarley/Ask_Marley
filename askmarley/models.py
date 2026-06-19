@@ -119,7 +119,7 @@ class ChatThread(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
     consumer_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    provider_id = db.Column(db.Integer, db.ForeignKey("providers.id"), nullable=False)
+    provider_id = db.Column(db.Integer, db.ForeignKey("providers.id"), nullable=True)
 
 
 class ChatMessage(TimestampMixin, db.Model):
@@ -130,6 +130,19 @@ class ChatMessage(TimestampMixin, db.Model):
     sender_type = db.Column(db.String(20), nullable=False)
     message = db.Column(db.Text, nullable=False)
     flagged = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class ChatThreadPin(TimestampMixin, db.Model):
+    __tablename__ = "chat_thread_pins"
+
+    id = db.Column(db.Integer, primary_key=True)
+    thread_id = db.Column(db.Integer, db.ForeignKey("chat_threads.id"), nullable=False, index=True)
+    label = db.Column(db.String(255), nullable=False)
+
+    thread = db.relationship(
+        "ChatThread",
+        backref=db.backref("pins", lazy=True, cascade="all, delete-orphan"),
+    )
 
 
 class ConciergeSession(TimestampMixin, db.Model):
