@@ -35,7 +35,16 @@ body {
   margin: 0;
   font-family: "Sora", sans-serif;
   color: var(--text-main);
-  background: linear-gradient(145deg, #f3f7ff 0%, #eef3ff 35%, #fff5f6 100%);
+  background-color: #f8f8f6;
+  background-image:
+    linear-gradient(180deg, rgba(8, 27, 56, 0.03) 0%, rgba(8, 27, 56, 0) 240px),
+    repeating-linear-gradient(
+      135deg,
+      rgba(8, 27, 56, 0.012) 0px,
+      rgba(8, 27, 56, 0.012) 1px,
+      transparent 1px,
+      transparent 16px
+    );
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
@@ -44,12 +53,11 @@ body {
 
 .bg-layer {
   position: fixed;
-  inset: -20% -10% auto;
-  height: 480px;
+  inset: 0;
   background:
-    radial-gradient(circle at 15% 35%, rgba(193, 18, 31, 0.12), transparent 40%),
-    radial-gradient(circle at 78% 15%, rgba(6, 26, 64, 0.15), transparent 35%),
-    linear-gradient(120deg, rgba(6, 26, 64, 0.05), rgba(247, 250, 255, 0));
+    radial-gradient(1100px 460px at -5% -12%, rgba(6, 26, 64, 0.09), transparent 60%),
+    radial-gradient(900px 380px at 110% -20%, rgba(193, 18, 31, 0.08), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.05));
   z-index: -1;
   pointer-events: none;
 }

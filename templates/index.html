@@ -2,634 +2,1046 @@
 {% block title %}AskMarley | Local Services Concierge{% endblock %}
 
 {% block content %}
-<!-- Section 1: Hero Portal Header -->
-<section class="hero portal-hero">
-  <!-- Left Side: Hero Introductions -->
-  <div class="hero-left">
-    <div class="portal-brand-lockup hero-brand-lockup">
-      <img class="portal-logo hero-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
-    </div>
-    <div class="status-pill">
-      <span class="status-pulse"></span>
-      <span class="status-text">UK-Wide Coverage</span>
-    </div>
-    <p class="eyebrow">UK Local Services Concierge</p>
-    <h1>Find trusted local help by chatting with Marley.</h1>
-    <p class="subtitle">AskMarley combines postcode-aware provider discovery, real-time chatbot matching, and project clipboard management in one streamlined interface.</p>
-    
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="{{ url_for('consumer.chat') }}">
-        <img class="btn-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
-        Open Consumer Chat
-      </a>
-      <a class="btn btn-light" href="{{ url_for('consumer.search') }}">
-        <!-- Search Glass Icon -->
-        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        Manual Search
-      </a>
-    </div>
-  </div>
+<div class="marley-portal-theme">
+  <!-- ==========================================================================
+       SECTION 1: HERO PORTAL & CONVERSATIONAL SIMULATOR
+       ========================================================================== -->
+  <section class="portal-hero-section">
+    <div class="portal-hero-container">
+      <!-- Left: Dynamic Value Pitch -->
+      <div class="hero-text-block">
+        <div class="hero-badge-row">
+          <div class="brand-badge">
+            <img class="brand-badge-img" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley badge">
+          </div>
+          <div class="network-status">
+            <span class="status-ping"></span>
+            <span class="status-label">UK-Wide Instant Match</span>
+          </div>
+        </div>
 
-  <!-- Right Side: Portal Shortcuts Card -->
-  <aside class="info-card shortcut-panel">
-    <h3>Portal Shortcuts</h3>
-    <p class="panel-intro-text">Jump directly to your active dashboards or workspace portals.</p>
-    
-    <div class="shortcut-list">
-      <!-- Shortcut 1: Clipboard -->
-      <a href="{{ url_for('consumer.clipboard') }}" class="shortcut-item">
-        <div class="shortcut-icon clipboard-accent">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
+        <h1 class="hero-headline">Find trusted local help by chatting with <span class="accent-gradient">Marley</span></h1>
+        <p class="hero-paragraph">Skip tedious directories and endless contact forms. AskMarley is a conversational hub that matches you with certified local trade professionals in under 90 seconds using postcode intelligence.</p>
+        
+        <div class="hero-buttons">
+          <a class="marley-btn marley-btn-primary" href="{{ url_for('consumer.chat') }}">
+            <div class="marley-btn-avatar">
+              <img src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley">
+            </div>
+            <span>Start Chatting Now</span>
+            <svg class="marley-btn-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          <a class="marley-btn marley-btn-secondary" href="{{ url_for('consumer.search') }}">
+            <svg class="marley-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span>Manual Search</span>
+          </a>
         </div>
-        <div class="shortcut-text">
-          <span class="shortcut-title">Consumer Clipboard</span>
-          <span class="shortcut-description">Review pinned service selections & draft projects.</span>
-        </div>
-        <div class="shortcut-arrow">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </a>
+      </div>
 
-      <!-- Shortcut 2: Provider Login -->
-      <a href="{{ url_for('auth.login') }}" class="shortcut-item">
-        <div class="shortcut-icon provider-accent">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <div class="shortcut-text">
-          <span class="shortcut-title">Provider Hub</span>
-          <span class="shortcut-description">Manage listing data, settings & incoming leads.</span>
-        </div>
-        <div class="shortcut-arrow">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </a>
+      <!-- Right: Real-time Typing Conversational Mockup -->
+      <div class="hero-simulator-block">
+        <div class="simulator-window">
+          <div class="simulator-header">
+            <div class="simulator-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="simulator-identity">
+              <img class="simulator-avatar" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley">
+              <div>
+                <div class="simulator-name">Marley Chat AI</div>
+                <div class="simulator-status">Active Assistant</div>
+              </div>
+            </div>
+            <span class="simulator-pill">Live Demo</span>
+          </div>
 
-      <!-- Shortcut 3: Admin Operations -->
-      {% if is_admin_user %}
-        <a href="{{ url_for('admin.dashboard') }}" class="shortcut-item admin-item">
-          <div class="shortcut-icon admin-accent">
+          <div class="simulator-body" id="simulatorChatBody">
+            <!-- Bubbles are injected dynamically by JS below to look incredibly real -->
+            <div class="bubble bubble-system">Hi! Tell me what you're looking for, plus your UK postcode.</div>
+          </div>
+          
+          <div class="simulator-footer">
+            <div class="simulator-input-mock">Ask Marley anything...</div>
+            <a class="simulator-send-btn" href="{{ url_for('consumer.chat') }}">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SECTION 2: PORTAL CONTROL CENTER (BENTO GRID SHORTCUTS)
+       ========================================================================== -->
+  <section class="portal-grid-section">
+    <div class="section-meta-header">
+      <span class="eyebrow-accent">Navigation Hub</span>
+      <h2 class="section-title">Portal Control Center</h2>
+      <p class="section-subtitle">Jump directly to your active dashboards or workspace portals.</p>
+    </div>
+
+    <div class="bento-grid">
+      <!-- Card 1: Consumer Clipboard -->
+      <a href="{{ url_for('consumer.clipboard') }}" class="bento-card bento-clipboard">
+        <div class="bento-card-content">
+          <div class="bento-icon-box clipboard-accent">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <div class="shortcut-text">
-            <span class="shortcut-title">Super Admin Ops</span>
-            <span class="shortcut-description">System configuration, databases & audit parameters.</span>
+          <div class="bento-text-box">
+            <div class="bento-title-row">
+              <h3>Consumer Clipboard</h3>
+              <span class="bento-badge">Workspace</span>
+            </div>
+            <p>Review pinned service selections, check active comparisons, and manage draft projects in one place.</p>
           </div>
-          <div class="shortcut-arrow">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </div>
+        <div class="bento-hover-effect"></div>
+      </a>
+
+      <!-- Card 2: Provider Hub -->
+      <a href="{{ url_for('auth.login') }}" class="bento-card bento-provider">
+        <div class="bento-card-content">
+          <div class="bento-icon-box provider-accent">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
+          <div class="bento-text-box">
+            <div class="bento-title-row">
+              <h3>Provider Hub</h3>
+              <span class="bento-badge red-badge">Business Portal</span>
+            </div>
+            <p>Manage listing profiles, adjust postcode coverage settings, and handle incoming leads seamlessly.</p>
+          </div>
+        </div>
+        <div class="bento-hover-effect"></div>
+      </a>
+
+      <!-- Card 3: Admin Operations (Conditional) -->
+      {% if is_admin_user %}
+        <a href="{{ url_for('admin.dashboard') }}" class="bento-card bento-admin span-columns">
+          <div class="bento-card-content">
+            <div class="bento-icon-box admin-accent">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div class="bento-text-box">
+              <div class="bento-title-row">
+                <h3>Super Admin Ops</h3>
+                <span class="bento-badge gold-badge">System Root</span>
+              </div>
+              <p>Configure system databases, audit API requests, and update nationwide compliance parameters.</p>
+            </div>
+          </div>
+          <div class="bento-hover-effect"></div>
         </a>
       {% endif %}
     </div>
-  </aside>
-</section>
+  </section>
 
-<!-- Section 2: Trust & Scale Metrics Strip -->
-<section class="trust-strip">
-  <div class="stat-item">
-    <span class="stat-number">14,200+</span>
-    <span class="stat-label">Providers Matched</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-number">99.4%</span>
-    <span class="stat-label">UK Postcode Coverage</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-number">&lt; 90 Secs</span>
-    <span class="stat-label">Average Connection Time</span>
-  </div>
-</section>
-
-<!-- Section 3: Visual Step-by-Step Flow -->
-<section class="how-it-works">
-  <div class="section-header">
-    <span class="section-eyebrow">Simplicity First</span>
-    <h2>How AskMarley Works</h2>
-    <p>We bypass lengthy search forms by matching you with professionals through conversational intelligence.</p>
-  </div>
-  
-  <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-num-badge">1</div>
-      <h4>State Your Task</h4>
-      <p>Describe what you need in plain terms. Marley parses details like trade requirements, timeline, and job scope.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num-badge">2</div>
-      <h4>Target Postcodes</h4>
-      <p>Our mapping system screens certified professionals registered specifically inside your immediate local postcode radius.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-num-badge">3</div>
-      <h4>Build Your Clipboard</h4>
-      <p>Organise and pin your matching candidates to a temporary workspace panel without committing to a hire immediately.</p>
-    </div>
-  </div>
-</section>
-
-<!-- Section 4: Value Proposition & Security Grid -->
-<section class="benefits-section">
-  <div class="section-header">
-    <span class="section-eyebrow">Key Advantages</span>
-    <h2>Built For Modern Service Discovery</h2>
-  </div>
-
-  <div class="benefits-grid">
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
+  <!-- ==========================================================================
+       SECTION 3: METRICS STRIP
+       ========================================================================== -->
+  <section class="trust-metrics-section">
+    <div class="metrics-inner-strip">
+      <div class="metric-item">
+        <h4 class="metric-val">14,200+</h4>
+        <p class="metric-lbl">Vetted Providers Matched</p>
       </div>
-      <h4>Vetted Professionals</h4>
-      <p>Every listing on AskMarley is verified through business checks, public registration numbers, and dynamic customer reviews.</p>
+      <span class="metric-divider"></span>
+      <div class="metric-item">
+        <h4 class="metric-val">99.4%</h4>
+        <p class="metric-lbl">UK Postcode Coverage</p>
+      </div>
+      <span class="metric-divider"></span>
+      <div class="metric-item">
+        <h4 class="metric-val">&lt; 90 Secs</h4>
+        <p class="metric-lbl">Avg. Connection Speed</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SECTION 4: TIMELINE PROCESS FLOW
+       ========================================================================== -->
+  <section class="timeline-process-section">
+    <div class="section-meta-header">
+      <span class="eyebrow-accent">How it works</span>
+      <h2 class="section-title">The Conversational Path</h2>
+      <p class="section-subtitle">No long forms or generic search bars. Here is how Marley connects you to professionals.</p>
     </div>
 
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
+    <div class="process-timeline">
+      <div class="timeline-step">
+        <div class="step-num">1</div>
+        <div class="step-card">
+          <h4>State Your Task</h4>
+          <p>Describe your maintenance need or building project naturally. Marley automatically parses the required trade type and work details.</p>
+        </div>
       </div>
-      <h4>Conversational Directness</h4>
-      <p>Skip phone tag. Marley helps you pinpoint the exact trade specifications required for your property or maintenance project.</p>
+      <div class="timeline-step">
+        <div class="step-num">2</div>
+        <div class="step-card">
+          <h4>Target Postcodes</h4>
+          <p>The system calculates distance vectors to filter registered professionals within your local area bounds instantly.</p>
+        </div>
+      </div>
+      <div class="timeline-step">
+        <div class="step-num">3</div>
+        <div class="step-card">
+          <h4>Build Your Clipboard</h4>
+          <p>Pin matched professionals to your persistent clipboard without committing. Keep track of reviews and make contact when ready.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SECTION 5: VALUE GRID
+       ========================================================================== -->
+  <section class="value-prop-section">
+    <div class="section-meta-header">
+      <span class="eyebrow-accent">Key Advantages</span>
+      <h2 class="section-title">Built For Modern Service Discovery</h2>
     </div>
 
-    <div class="benefit-card">
-      <div class="benefit-icon">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+    <div class="value-cards-grid">
+      <div class="val-card">
+        <div class="val-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <h4>Vetted Professionals</h4>
+        <p>Every listed provider is checked against active registries, customer reviews, and verification criteria to keep interactions secure.</p>
       </div>
-      <h4>Clipboard Management</h4>
-      <p>Compare quotes, write private review notes, and archive past service hires safely within a single dashboard.</p>
+
+      <div class="val-card">
+        <div class="val-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <h4>Conversational Directness</h4>
+        <p>Avoid phone tags. Explain the issue dynamically to specify trade requirements easily before initial contact.</p>
+      </div>
+
+      <div class="val-card">
+        <div class="val-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h4>Clipboard Management</h4>
+        <p>Track, sort, and archive leads seamlessly from your personal dashboard without feeling overwhelmed by emails.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SECTION 6: PREMIUM TESTIMONIAL
+       ========================================================================== -->
+  <section class="testimonial-section">
+    <div class="testimonial-inner">
+      <div class="testimonial-stars">★★★★★</div>
+      <p class="testimonial-body">"AskMarley totally changed how we scout contractors. No high-pressure quotes or random phone calls—just straightforward, conversational help."</p>
+      <div class="testimonial-author">
+        <p class="author-name">Sarah Jenkins</p>
+        <p class="author-location">Homeowner — Bristol, UK</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==========================================================================
+     STICKY ANIMATED FLOATING CHAT ELEMENT (REQUESTED UPGRADE)
+     ========================================================================== -->
+<div class="marley-chat-anchor" id="marleyChatAnchor">
+  <div class="marley-chat-popup" id="marleyChatPopup">
+    <div class="popup-head">
+      <div class="popup-badge">Online</div>
+      <button class="popup-close" id="closePopupBtn" aria-label="Dismiss banner">×</button>
+    </div>
+    <div class="popup-body">
+      <p><strong>Hi there! 👋 I'm Marley.</strong></p>
+      <p>Need a trusted plumber, electrician, or local specialist? Let's match you up.</p>
+    </div>
+    <div class="popup-actions">
+      <a href="{{ url_for('consumer.chat') }}" class="popup-cta">Ask Marley</a>
     </div>
   </div>
-</section>
 
-<!-- Section 5: Trust Verification Testimonial -->
-<section class="testimonial-section">
-  <div class="testimonial-content">
-    <div class="star-rating">★★★★★</div>
-
-<blockquote class="testimonial-quote">
-      The Best Review's Ever!
-</blockquote>
-    <div class="testimonial-author">
-      <span class="author-name">Client</span>
-      <span class="author-location">Homeowner — Bristol, UK</span>
+  <a href="{{ url_for('consumer.chat') }}" class="marley-floating-btn" aria-label="Open consumer chat with Marley">
+    <div class="pulse-ring pulse-1"></div>
+    <div class="pulse-ring pulse-2"></div>
+    <div class="floating-btn-inner">
+      <img src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley Icon">
+      <span class="active-dot"></span>
     </div>
-  </div>
-</section>
+  </a>
+</div>
 
-<!-- Self-Contained Landing Page Layout Styles -->
+<!-- ==========================================================================
+     COMPREHENSIVE STYLING SHEET
+     ========================================================================== -->
 <style>
-  .portal-hero {
+  /* Explicit Modern Color Palette - Restricts overrides from parent themes */
+  .marley-portal-theme {
+    --bg-dark: #0B0F19;
+    --card-dark: #151B2C;
+    --navy-blue: #1E293B;
+    --soft-white: #F8FAFC;
+    --primary: #4F46E5; /* Royal Indigo */
+    --primary-light: #6366F1;
+    --accent-crimson: #EF4444; /* Vivid Crimson */
+    --accent-crimson-dark: #DC2626;
+    --slate-border: #E2E8F0;
+    --slate-text: #334155;
+    --slate-muted: #64748B;
+    
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--slate-text);
+    background-color: #FAFBFD;
+    padding: 3rem 1.5rem;
+    max-width: 1250px;
+    margin: 0 auto;
+    overflow-x: hidden;
+  }
+
+  /* ==========================================================================
+     HERO SECTION & MOCKUP LAYOUT
+     ========================================================================== */
+  .portal-hero-section {
+    margin-bottom: 5rem;
+  }
+
+  .portal-hero-container {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 4rem;
     align-items: center;
-    gap: 3rem !important;
-    margin-bottom: 3.5rem;
   }
 
-  .hero-left {
+  .hero-badge-row {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
   }
 
-  .hero-brand-lockup {
-    margin-bottom: 1.25rem;
+  .brand-badge {
+    padding: 3px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-crimson) 100%);
+    border-radius: 50%;
+    display: inline-flex;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
   }
 
-  .hero-logo {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-md);
-    border: 2px solid rgba(6, 26, 64, 0.08);
-    box-shadow: var(--shadow);
-    object-fit: cover;
-  }
-
-  .btn-icon-image {
-    width: 20px;
-    height: 20px;
+  .brand-badge-img {
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
+    background: #ffffff;
   }
 
-  /* Interactive Live Badge */
-  .status-pill {
+  .network-status {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.35rem 0.75rem;
-    background: rgba(6, 26, 64, 0.04);
-    border: 1px solid rgba(6, 26, 64, 0.06);
+    padding: 0.45rem 0.9rem;
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
     border-radius: 999px;
-    margin-bottom: 1rem;
   }
 
-  .status-pulse {
-    width: 6px;
-    height: 6px;
-    background-color: var(--crimson);
+  .status-ping {
+    width: 8px;
+    height: 8px;
+    background-color: #10B981;
     border-radius: 50%;
     position: relative;
   }
 
-  .status-pulse::after {
+  .status-ping::after {
     content: '';
     position: absolute;
     inset: -3px;
     border-radius: 50%;
-    border: 2px solid var(--crimson);
-    animation: pulse 1.6s ease-out infinite;
+    border: 2px solid #10B981;
+    animation: pingAnimate 1.8s infinite ease-out;
   }
 
-  .status-text {
-    font-size: 0.72rem;
+  .status-label {
+    font-size: 0.75rem;
     font-weight: 700;
-    color: var(--royal-navy);
-    letter-spacing: 0.05em;
+    color: var(--slate-text);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  /* Buttons & SVG styling */
-  .btn-icon {
+  .hero-headline {
+    font-size: 3.25rem;
+    font-weight: 850;
+    line-height: 1.15;
+    color: var(--bg-dark);
+    letter-spacing: -0.03em;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .accent-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-crimson) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-paragraph {
+    font-size: 1.1rem;
+    line-height: 1.65;
+    color: var(--slate-muted);
+    margin: 0 0 2.5rem 0;
+  }
+
+  .hero-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  /* Custom Clean Buttons */
+  .marley-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .marley-btn-primary {
+    background: var(--primary);
+    color: #ffffff !important;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.25);
+  }
+
+  .marley-btn-primary:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.4);
+  }
+
+  .marley-btn-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+  }
+
+  .marley-btn-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .marley-btn-arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
+
+  .marley-btn-primary:hover .marley-btn-arrow {
+    transform: translateX(4px);
+  }
+
+  .marley-btn-secondary {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    color: var(--slate-text) !important;
+  }
+
+  .marley-btn-secondary:hover {
+    background: var(--soft-white);
+    border-color: var(--slate-muted);
+    transform: translateY(-2px);
+  }
+
+  .marley-btn-icon {
     width: 18px;
     height: 18px;
   }
 
-  /* Redesigned Shortcuts Column */
-  .shortcut-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.75rem !important;
-  }
-
-  .panel-intro-text {
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.4;
-    margin-top: -0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .shortcut-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .shortcut-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    text-decoration: none;
-    padding: 1rem;
-    background: #fafbfe;
-    border: 1px solid rgba(6, 26, 64, 0.05);
-    border-radius: var(--radius-md);
-    transition: var(--transition-smooth);
-  }
-
-  .shortcut-item:hover {
-    background: #ffffff;
-    border-color: var(--royal-navy);
-    box-shadow: var(--shadow);
-    transform: translateX(4px);
-  }
-
-  .shortcut-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  /* Semantic Accent Colors for Icon Containers */
-  .clipboard-accent {
-    background: rgba(6, 26, 64, 0.05);
-    color: var(--royal-navy);
-  }
-
-  .provider-accent {
-    background: rgba(193, 18, 31, 0.05);
-    color: var(--crimson);
-  }
-
-  .admin-accent {
-    background: rgba(212, 175, 55, 0.12);
-    color: #856404;
-  }
-
-  .shortcut-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .shortcut-text {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    line-height: 1.35;
-  }
-
-  .shortcut-title {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--text-main);
-    transition: var(--transition-smooth);
-  }
-
-  .shortcut-item:hover .shortcut-title {
-    color: var(--royal-navy);
-  }
-
-  .shortcut-description {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 0.1rem;
-  }
-
-  .shortcut-arrow {
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.5;
-    transition: var(--transition-smooth);
-  }
-
-  .shortcut-arrow svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .shortcut-item:hover .shortcut-arrow {
-    color: var(--royal-navy);
-    opacity: 1;
-    transform: translateX(2px);
-  }
-
-  .admin-item:hover {
-    border-color: var(--champagne-gold);
-  }
-
-  .admin-item:hover .shortcut-title {
-    color: #856404;
-  }
-
   /* ==========================================================================
-     Trust & Scale Metrics Strip
+     LIVE CONVERSATIONAL AI SIMULATOR (DRAMATIC IMPROVEMENT)
      ========================================================================== */
-  .trust-strip {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background: white;
-    border: 1px solid rgba(6, 26, 64, 0.06);
-    padding: 1.5rem 2rem;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    margin-bottom: 4rem;
-  }
-
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .stat-number {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--royal-navy);
-  }
-
-  .stat-label {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--muted);
-    margin-top: 0.25rem;
-  }
-
-  .stat-divider {
-    width: 1px;
-    height: 40px;
-    background-color: rgba(6, 26, 64, 0.08);
-  }
-
-  /* ==========================================================================
-     Standardized Section Header Elements
-     ========================================================================== */
-  .section-header {
-    text-align: center;
-    max-width: 650px;
-    margin: 0 auto 3rem;
-  }
-
-  .section-header h2 {
-    font-size: 1.85rem;
-    margin: 0.25rem 0 0.75rem;
-  }
-
-  .section-header p {
-    color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1.5;
-  }
-
-  .section-eyebrow {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--crimson);
-    letter-spacing: 0.08em;
-  }
-
-  /* ==========================================================================
-     How It Works Grid
-     ========================================================================== */
-  .how-it-works {
-    margin-bottom: 4.5rem;
-  }
-
-  .steps-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-  }
-
-  .step-card {
-    background: white;
-    border: 1px solid rgba(6, 26, 64, 0.05);
-    border-radius: var(--radius-lg);
-    padding: 2rem 1.5rem 1.75rem;
+  .hero-simulator-block {
     position: relative;
-    box-shadow: var(--shadow);
-    transition: var(--transition-smooth);
   }
 
-  .step-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(6, 26, 64, 0.15);
+  .simulator-window {
+    background: #111827;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 400px;
   }
 
-  .step-num-badge {
-    position: absolute;
-    top: -15px;
-    left: 1.5rem;
-    background: var(--royal-navy);
-    color: var(--ice-white);
-    width: 32px;
-    height: 32px;
+  .simulator-header {
+    background: #1F2937;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .simulator-dots {
+    display: flex;
+    gap: 6px;
+    margin-right: 1.25rem;
+  }
+
+  .simulator-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #EF4444;
+  }
+
+  .simulator-dots span:nth-child(2) { background: #F59E0B; }
+  .simulator-dots span:nth-child(3) { background: #10B981; }
+
+  .simulator-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-grow: 1;
+  }
+
+  .simulator-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .simulator-name {
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .simulator-status {
+    color: #10B981;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .simulator-pill {
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .simulator-body {
+    flex-grow: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Chat bubble styling */
+  .bubble {
+    max-width: 80%;
+    padding: 0.85rem 1.15rem;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .bubble-system {
+    background: #374151;
+    color: #F9FAFB;
+    align-self: flex-start;
+    border-top-left-radius: 4px;
+  }
+
+  .bubble-user {
+    background: var(--primary);
+    color: #ffffff;
+    align-self: flex-end;
+    border-top-right-radius: 4px;
+    animation: bubbleEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .bubble-typing {
+    background: #1F2937;
+    color: #9CA3AF;
+    align-self: flex-start;
+    padding: 0.6rem 1rem;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .bubble-typing span {
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: typingDots 1.4s infinite ease-in-out;
+  }
+
+  .bubble-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .bubble-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  .simulator-footer {
+    padding: 1rem 1.25rem;
+    background: #1F2937;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .simulator-input-mock {
+    flex-grow: 1;
+    background: #111827;
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    color: #6B7280;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .simulator-send-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    color: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: "Space Grotesk", sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 8px rgba(6, 26, 64, 0.15);
+    transition: transform 0.2s ease;
   }
 
-  .step-card h4 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .step-card p {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.5;
+  .simulator-send-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   /* ==========================================================================
-     Core Benefits / USPs Grid
+     SECTION 2: BENTO SHORTCUT LAYOUT
      ========================================================================== */
-  .benefits-section {
-    margin-bottom: 4.5rem;
+  .portal-grid-section {
+    margin-bottom: 5rem;
   }
 
-  .benefits-grid {
+  .section-meta-header {
+    text-align: center;
+    max-width: 650px;
+    margin: 0 auto 3.5rem;
+  }
+
+  .eyebrow-accent {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--accent-crimson);
+    letter-spacing: 0.1em;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--bg-dark);
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.02em;
+  }
+
+  .section-subtitle {
+    font-size: 1rem;
+    color: var(--slate-muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .bento-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
 
-  .benefit-card {
-    background: transparent;
-    border: 1px solid rgba(6, 26, 64, 0.06);
-    border-radius: var(--radius-lg);
-    padding: 2rem 1.5rem;
+  .span-columns {
+    grid-column: span 2;
+  }
+
+  .bento-card {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: var(--marley-radius, 16px);
+    padding: 2.25rem;
+    text-decoration: none !important;
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    transition: var(--transition-smooth);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .benefit-card:hover {
-    background: white;
-    box-shadow: var(--shadow);
-    border-color: rgba(6, 26, 64, 0.12);
+  .bento-card-content {
+    display: flex;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 2;
   }
 
-  .benefit-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-sm);
-    background: rgba(193, 18, 31, 0.05);
-    color: var(--crimson);
+  .bento-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .benefit-icon svg {
-    width: 22px;
-    height: 22px;
+  .bento-icon-box svg {
+    width: 26px;
+    height: 26px;
   }
 
-  .benefit-card h4 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+  .clipboard-accent {
+    background: rgba(79, 70, 229, 0.08);
+    color: var(--primary);
   }
 
-  .benefit-card p {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.5;
+  .provider-accent {
+    background: rgba(239, 44, 44, 0.08);
+    color: var(--accent-crimson);
+  }
+
+  .admin-accent {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+  }
+
+  .bento-text-box h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--bg-dark);
+    margin: 0;
+  }
+
+  .bento-text-box p {
+    font-size: 0.95rem;
+    color: var(--slate-muted);
+    line-height: 1.55;
+    margin: 0.75rem 0 0 0;
+  }
+
+  .bento-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .bento-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(79, 70, 229, 0.08);
+    color: var(--primary);
+    text-transform: uppercase;
+  }
+
+  .red-badge {
+    background: rgba(239, 44, 44, 0.08);
+    color: var(--accent-crimson);
+  }
+
+  .gold-badge {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+  }
+
+  /* Interactive Hover states */
+  .bento-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary-light);
+    box-shadow: 0 15px 35px rgba(79, 70, 229, 0.08);
+  }
+
+  .bento-card:hover .bento-icon-box {
+    transform: scale(1.08);
+  }
+
+  .bento-card:hover .bento-text-box h3 {
+    color: var(--primary);
+  }
+
+  .bento-provider:hover {
+    border-color: var(--accent-crimson);
+    box-shadow: 0 15px 35px rgba(239, 44, 44, 0.08);
+  }
+
+  .bento-provider:hover .bento-text-box h3 {
+    color: var(--accent-crimson);
   }
 
   /* ==========================================================================
-     Testimonial Component
+     SECTION 3: STRIP METRICS
      ========================================================================== */
-  .testimonial-section {
-    background: var(--royal-navy);
-    border-radius: var(--radius-lg);
-    padding: 3rem 2.5rem;
-    color: var(--ice-white);
+  .trust-metrics-section {
+    margin-bottom: 5rem;
+  }
+
+  .metrics-inner-strip {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  }
+
+  .metric-item {
     text-align: center;
-    box-shadow: 0 15px 35px rgba(6, 26, 64, 0.2);
-    position: relative;
-    overflow: hidden;
   }
 
-  .testimonial-section::before {
-    content: '"';
+  .metric-val {
+    font-size: 2.5rem;
+    font-weight: 850;
+    color: var(--bg-dark);
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -0.02em;
+  }
+
+  .metric-lbl {
+    font-size: 0.88rem;
+    color: var(--slate-muted);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .metric-divider {
+    width: 1px;
+    height: 48px;
+    background: var(--slate-border);
+  }
+
+  /* ==========================================================================
+     SECTION 4: TIMELINE PROCESS FLOW
+     ========================================================================== */
+  .timeline-process-section {
+    margin-bottom: 5rem;
+  }
+
+  .process-timeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    position: relative;
+  }
+
+  .process-timeline::before {
+    content: '';
     position: absolute;
-    top: -20px;
-    left: 20px;
-    font-size: 12rem;
-    font-family: serif;
-    color: rgba(255, 255, 255, 0.03);
-    line-height: 1;
-    pointer-events: none;
-  }
-
-  .testimonial-content {
-    max-width: 750px;
-    margin: 0 auto;
-    position: relative;
+    top: 24px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: var(--slate-border);
     z-index: 1;
   }
 
-  .star-rating {
-    color: var(--champagne-gold);
-    font-size: 1.2rem;
-    letter-spacing: 0.15em;
-    margin-bottom: 1.25rem;
+  .timeline-step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  .testimonial-quote {
+  .step-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
     font-size: 1.15rem;
-    font-weight: 500;
-    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
     margin-bottom: 1.5rem;
-    font-style: italic;
-    color: rgba(247, 250, 255, 0.95);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .timeline-step:hover .step-num {
+    transform: scale(1.15);
+    background: var(--accent-crimson);
+    box-shadow: 0 4px 10px rgba(239, 44, 44, 0.3);
+  }
+
+  .timeline-step .step-card {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .timeline-step:hover .step-card {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+    border-color: var(--slate-muted);
+  }
+
+  .timeline-step h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--bg-dark);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .timeline-step p {
+    font-size: 0.88rem;
+    color: var(--slate-muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ==========================================================================
+     SECTION 5: VALUE PROPOSITIONS
+     ========================================================================== */
+  .value-prop-section {
+    margin-bottom: 5rem;
+  }
+
+  .value-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .val-card {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: var(--marley-radius, 16px);
+    padding: 2.25rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .val-card:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    border-color: var(--primary);
+  }
+
+  .val-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(79, 70, 229, 0.06);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: background 0.3s ease;
+  }
+
+  .val-card:hover .val-icon {
+    background: var(--primary);
+    color: #ffffff;
+  }
+
+  .val-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .val-card h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--bg-dark);
+    margin: 0 0 0.75rem 0;
+  }
+
+  .val-card p {
+    font-size: 0.9rem;
+    color: var(--slate-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ==========================================================================
+     SECTION 6: PREMIUM TESTIMONIAL
+     ========================================================================== */
+  .testimonial-section {
+    margin-bottom: 2rem;
+  }
+
+  .testimonial-inner {
+    background: radial-gradient(circle at top left, var(--card-dark) 0%, var(--bg-dark) 100%);
+    border-radius: 24px;
+    padding: 4.5rem 3rem;
+    text-align: center;
+    color: #ffffff;
+    box-shadow: 0 15px 40px rgba(11, 15, 25, 0.2);
+  }
+
+  .testimonial-stars {
+    color: #FBBF24;
+    font-size: 1.4rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+  }
+
+  .testimonial-body {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.55;
+    font-weight: 500;
+    max-width: 800px;
+    margin: 0 auto 2rem auto;
+    color: #F3F4F6;
   }
 
   .testimonial-author {
@@ -640,67 +1052,379 @@
 
   .author-name {
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 1rem;
+    color: #ffffff;
   }
 
   .author-location {
-    font-size: 0.75rem;
-    color: rgba(247, 250, 255, 0.6);
-    letter-spacing: 0.02em;
+    font-size: 0.8rem;
+    color: var(--slate-muted);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   /* ==========================================================================
-     Local Keyframe Animations
+     STICKY ANIMATED FLOATING CHAT BUTTON / POPUP
      ========================================================================== */
-  @keyframes pulse {
-    0% {
-      transform: scale(0.95);
-      opacity: 0.8;
-    }
-    100% {
-      transform: scale(1.8);
-      opacity: 0;
-    }
+  .marley-chat-anchor {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  /* Dynamic floating welcome balloon */
+  .marley-chat-popup {
+    width: 290px;
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 16px;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transform: translateY(20px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .marley-chat-popup.show-balloon {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .marley-chat-popup::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 24px;
+    width: 16px;
+    height: 16px;
+    background: #ffffff;
+    transform: rotate(45deg);
+    border-bottom: 1px solid var(--slate-border);
+    border-right: 1px solid var(--slate-border);
+  }
+
+  .popup-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .popup-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #10B981;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(16, 185, 129, 0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .popup-close {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--slate-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .popup-close:hover {
+    color: var(--accent-crimson);
+  }
+
+  .popup-body {
+    font-size: 0.85rem;
+    color: var(--slate-text);
+    line-height: 1.45;
+  }
+
+  .popup-body p {
+    margin: 0 0 0.5rem 0;
+  }
+
+  .popup-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .popup-actions {
+    margin-top: 1rem;
+    display: flex;
+  }
+
+  .popup-cta {
+    display: inline-block;
+    background: var(--primary);
+    color: #ffffff !important;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+  }
+
+  .popup-cta:hover {
+    background: var(--primary-light);
+  }
+
+  /* Radar Pulse Floating Button */
+  .marley-floating-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .marley-floating-btn:hover {
+    transform: scale(1.08);
+    background: var(--primary-light);
+  }
+
+  .floating-btn-inner {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #ffffff;
+  }
+
+  .floating-btn-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .active-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #10B981;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+  }
+
+  /* Concentric radar rings */
+  .pulse-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--primary);
+    pointer-events: none;
+    inset: -4px;
+    z-index: -1;
+  }
+
+  .pulse-1 {
+    animation: radarRing 3s infinite cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pulse-2 {
+    animation: radarRing 3s infinite cubic-bezier(0.16, 1, 0.3, 1);
+    animation-delay: 1.5s;
+  }
+
+  /* Animations */
+  @keyframes pingAnimate {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  @keyframes radarRing {
+    0% { transform: scale(0.95); opacity: 0.8; border-color: var(--primary); }
+    100% { transform: scale(1.4); opacity: 0; border-color: var(--accent-crimson); }
+  }
+
+  @keyframes bubbleEnter {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes typingDots {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
   }
 
   /* ==========================================================================
-     Responsive Adjustments
+     RESPONSIVE BREAKPOINTS
      ========================================================================== */
-  @media (max-width: 900px) {
-    .portal-hero {
-      gap: 1.5rem !important;
-      margin-bottom: 2rem;
+  @media (max-width: 991px) {
+    .portal-hero-container {
+      grid-template-columns: 1fr;
+      gap: 3rem;
     }
 
-    .trust-strip {
+    .hero-headline {
+      font-size: 2.5rem;
+    }
+
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .span-columns {
+      grid-column: span 1;
+    }
+
+    .bento-card-content {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .metrics-inner-strip {
       flex-direction: column;
       gap: 1.5rem;
-      padding: 1.5rem;
-      margin-bottom: 2.5rem;
+      padding: 1.75rem;
     }
 
-    .stat-divider {
+    .metric-divider {
       width: 60px;
       height: 1px;
     }
 
-    .steps-grid, .benefits-grid {
+    .process-timeline {
       grid-template-columns: 1fr;
-      gap: 2rem;
+      gap: 3rem;
     }
 
-    .step-card {
-      padding: 2.25rem 1.25rem 1.5rem;
+    .process-timeline::before {
+      display: none;
     }
 
-    .testimonial-section {
-      padding: 2rem 1.5rem;
+    .value-cards-grid {
+      grid-template-columns: 1fr;
     }
 
-    .testimonial-quote {
-      font-size: 1rem;
+    .testimonial-inner {
+      padding: 3rem 1.5rem;
+    }
+
+    .testimonial-body {
+      font-size: 1.25rem;
     }
   }
 </style>
+
+<!-- ==========================================================================
+     CLIENT INTERACTIVE JS MODULES
+     ========================================================================== -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    /* ------------------------------------------------------------------------
+       1. REAL-TIME HERO CONVERSATION SIMULATOR
+       ------------------------------------------------------------------------ */
+    const simulatorBody = document.getElementById("simulatorChatBody");
+    
+    // Conversation loops
+    const chatSequences = [
+      [
+        { role: 'user', text: "Hey! I need a reliable plasterer in Manchester, M4." },
+        { role: 'system', text: "Analyzing 14,200 verified UK trade contractors... 🔎" },
+        { role: 'system', text: "Found 4 plasterers registered within postcode area M4! Would you like to pin them to your Clipboard?" }
+      ],
+      [
+        { role: 'user', text: "Looking for an emergency plumber near Bristol, BS1." },
+        { role: 'system', text: "Filtering plumbers inside postcode vector BS1... 🛠️" },
+        { role: 'system', text: "Done! 2 plumbers are active and available. Pin details, or review client testimonials?" }
+      ]
+    ];
+
+    let currentSeqIdx = 0;
+    
+    function playChatSequence() {
+      if (!simulatorBody) return;
+      
+      // Keep initial welcome message
+      simulatorBody.innerHTML = `<div class="bubble bubble-system">Hi! Tell me what you're looking for, plus your UK postcode.</div>`;
+      
+      const currentSequence = chatSequences[currentSeqIdx];
+      let stepIdx = 0;
+
+      function renderStep() {
+        if (stepIdx >= currentSequence.length) {
+          // Loop sequence list
+          currentSeqIdx = (currentSeqIdx + 1) % chatSequences.length;
+          setTimeout(playChatSequence, 4500); // Hold final output for 4.5s
+          return;
+        }
+
+        const currentMsg = currentSequence[stepIdx];
+
+        // 1. Inject Typing Indicator
+        const typingIndicator = document.createElement("div");
+        typingIndicator.className = "bubble bubble-typing";
+        typingIndicator.innerHTML = `<span></span><span></span><span></span>`;
+        simulatorBody.appendChild(typingIndicator);
+        simulatorBody.scrollTop = simulatorBody.scrollHeight;
+
+        // 2. Resolve delay to simulate realistic typing
+        const typingDelay = currentMsg.role === 'user' ? 1200 : 1800;
+
+        setTimeout(() => {
+          // Remove typing indicator
+          if (typingIndicator.parentNode) {
+            typingIndicator.parentNode.removeChild(typingIndicator);
+          }
+
+          // Build message Bubble
+          const bubble = document.createElement("div");
+          bubble.className = currentMsg.role === 'user' ? "bubble bubble-user" : "bubble bubble-system";
+          bubble.innerText = currentMsg.text;
+          
+          simulatorBody.appendChild(bubble);
+          simulatorBody.scrollTop = simulatorBody.scrollHeight;
+
+          stepIdx++;
+          setTimeout(renderStep, 1000); // Gap between steps
+        }, typingDelay);
+      }
+
+      setTimeout(renderStep, 1500); // Hold before sequence start
+    }
+
+    // Initialize Simulator
+    playChatSequence();
+
+    /* ------------------------------------------------------------------------
+       2. STICKY FLOATING WELCOME POPUP BALLOON
+       ------------------------------------------------------------------------ */
+    const popupBalloon = document.getElementById("marleyChatPopup");
+    const closePopupBtn = document.getElementById("closePopupBtn");
+
+    // Fade-in delayed welcome balloon
+    setTimeout(() => {
+      if (popupBalloon && !sessionStorage.getItem("marley_widget_dismissed")) {
+        popupBalloon.classList.add("show-balloon");
+      }
+    }, 4000);
+
+    // Dismiss trigger action
+    if (closePopupBtn && popupBalloon) {
+      closePopupBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        popupBalloon.classList.remove("show-balloon");
+        sessionStorage.setItem("marley_widget_dismissed", "true");
+      });
+    }
+  });
+</script>
 {% endblock %}
