@@ -65,3 +65,15 @@ def test_unknown_service_returns_no_detection():
 
 def test_invalid_short_postcode_remains_invalid():
     assert not is_valid_uk_postcode("SW1")
+
+
+def test_detect_service_for_roof_leak_prefers_roofer():
+    result = detect_service_details("I need to fix my roof leak urgently")
+    assert result["service_slug"] == "roofer"
+    assert result["ambiguous"] is False
+
+
+def test_provider_matching_for_roofer_postcode():
+    results = find_matching_providers("roofer", "SW1A 2AA")
+    assert results
+    assert results[0]["service_slug"] == "roofer"

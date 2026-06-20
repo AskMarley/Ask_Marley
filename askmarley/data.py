@@ -14,6 +14,11 @@ SERVICE_INTENTS = {
         "keywords": ["socket", "wiring", "fuse", "electric", "lights"],
         "branch": "Home Trades > Electrical > Repairs",
     },
+    "roofer": {
+        "name": "Roofers",
+        "keywords": ["roof", "roofing", "tile", "gutter", "chimney", "flashing"],
+        "branch": "Home Trades > Roofing > Repairs",
+    },
     "wedding-planner": {
         "name": "Wedding Planners",
         "keywords": ["wedding", "venue", "planner", "bridal"],
@@ -67,6 +72,17 @@ PROVIDERS = [
     },
     {
         "id": 4,
+        "name": "Summit Roofing Response",
+        "service_slug": "roofer",
+        "postcodes": ["SW1A", "SE1", "E1"],
+        "tier": "plus",
+        "billing_status": "active",
+        "verified": True,
+        "marleys_choice": False,
+        "activity_score": 67,
+    },
+    {
+        "id": 5,
         "name": "North Star Domestic Care",
         "service_slug": "cleaner",
         "postcodes": ["N1", "N4", "E1"],
@@ -77,7 +93,7 @@ PROVIDERS = [
         "activity_score": 55,
     },
     {
-        "id": 5,
+        "id": 6,
         "name": "Westminster Moments",
         "service_slug": "wedding-planner",
         "postcodes": ["SW1A", "W1", "NW1"],
@@ -88,7 +104,7 @@ PROVIDERS = [
         "activity_score": 88,
     },
     {
-        "id": 6,
+        "id": 7,
         "name": "Thames Garden Collective",
         "service_slug": "gardener",
         "postcodes": ["SE1", "SW1A", "W1"],
@@ -99,7 +115,7 @@ PROVIDERS = [
         "activity_score": 73,
     },
     {
-        "id": 7,
+        "id": 8,
         "name": "Paws Across London",
         "service_slug": "dog-walker",
         "postcodes": ["N1", "E1", "NW1"],
@@ -186,6 +202,7 @@ FLAGGED_CHATS = [
 TAXONOMY = [
     "Home Trades > Plumbing > Emergency Repair",
     "Home Trades > Electrical > Repairs",
+    "Home Trades > Roofing > Repairs",
     "Home Services > Cleaning > Domestic",
     "Events > Weddings > Planning",
 ]

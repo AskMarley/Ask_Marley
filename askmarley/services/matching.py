@@ -9,6 +9,24 @@ UK_POSTCODE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+PRIORITY_PHRASES = {
+    "roofer": [
+        "roof leak",
+        "leak in roof",
+        "roof repair",
+        "roofing repair",
+        "broken roof tile",
+        "gutter leak",
+    ],
+    "emergency-plumber": [
+        "pipe leak",
+        "leaky pipe",
+        "burst pipe",
+        "boiler leak",
+        "plumbing leak",
+    ],
+}
+
 
 def get_outward_code(postcode):
     normalized = normalize_uk_postcode(postcode)
@@ -38,6 +56,16 @@ def is_valid_uk_postcode(postcode):
 
 def detect_service_details(message):
     lowered = message.lower()
+
+    for slug, phrases in PRIORITY_PHRASES.items():
+        if any(phrase in lowered for phrase in phrases):
+            return {
+                "service_slug": slug,
+                "confidence": 0.95,
+                "ambiguous": False,
+                "options": [slug],
+            }
+
     match_scores = {}
     for slug, intent in SERVICE_INTENTS.items():
         score = sum(1 for keyword in intent["keywords"] if keyword in lowered)
