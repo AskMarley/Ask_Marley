@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_head %}{% endblock %}
   </head>
   <body>
     <!-- Preserved class selector to match global background styles -->
@@ -89,5 +90,6 @@
     </main>
 
     <script src="{{ url_for('static', filename='base.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
   </body>
 </html>

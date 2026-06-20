@@ -1,0 +1,86 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+<section class="admin-kpi-grid">
+  <article class="admin-kpi-card"><h3>Active Projects</h3><p>{{ analytics.active_projects }}</p></article>
+  <article class="admin-kpi-card"><h3>Open Moderation</h3><p>{{ analytics.moderation.open_cases }}</p></article>
+  <article class="admin-kpi-card"><h3>Resolved Cases</h3><p>{{ analytics.moderation.resolved_cases }}</p></article>
+  <article class="admin-kpi-card"><h3>Active Threads</h3><p>{{ analytics.response_metrics.active_threads }}</p></article>
+  <article class="admin-kpi-card"><h3>Top Location</h3><p>{{ analytics.top_location }}</p></article>
+  <article class="admin-kpi-card"><h3>Avg Msg/Thread</h3><p>{{ analytics.response_metrics.avg_messages_per_thread }}</p></article>
+</section>
+
+<section class="admin-panels two-col">
+  <article class="admin-panel">
+    <header>
+      <h2>Consumer Mix</h2>
+      <p>Current active account distribution.</p>
+    </header>
+    <ul class="admin-list simple">
+      <li><span>Free</span><strong>{{ analytics.free_accounts }}</strong></li>
+      <li><span>Student</span><strong>{{ analytics.student_accounts }}</strong></li>
+      <li><span>Individual</span><strong>{{ analytics.individual_accounts }}</strong></li>
+      <li><span>Business</span><strong>{{ analytics.business_accounts }}</strong></li>
+      <li><span>Business Plus</span><strong>{{ analytics.business_plus_accounts }}</strong></li>
+    </ul>
+  </article>
+
+  <article class="admin-panel">
+    <header>
+      <h2>Provider Tier Distribution</h2>
+      <p>Live provider positioning by plan.</p>
+    </header>
+    <ul class="admin-list simple">
+      {% for tier, count in analytics.provider_tier_counts.items() %}
+        <li><span>{{ tier|title }}</span><strong>{{ count }}</strong></li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+
+<section class="admin-panels two-col">
+  <article class="admin-panel">
+    <header>
+      <h2>Geography Heatmap</h2>
+      <p>Highest provider density by outward code.</p>
+    </header>
+    <div class="chip-grid">
+      {% for row in analytics.geography_heatmap %}
+        <div class="density-chip">
+          <strong>{{ row.outward_code }}</strong>
+          <span>{{ row.provider_count }} providers</span>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="admin-panel">
+    <header>
+      <h2>Quick Actions</h2>
+      <p>Jump straight to your key workflows.</p>
+    </header>
+    <div class="quick-actions">
+      <a class="btn btn-primary" href="{{ url_for('admin.providers_page') }}">Review Providers</a>
+      <a class="btn btn-light" href="{{ url_for('admin.moderation_page') }}">Moderation Queue</a>
+      <a class="btn btn-light" href="{{ url_for('admin.taxonomy_page') }}">Edit Taxonomy</a>
+      <a class="btn btn-light" href="{{ url_for('admin.audit_page') }}">View Audit Trail</a>
+      <a class="btn btn-primary" href="{{ url_for('admin.export_analytics_csv') }}">Export CSV</a>
+    </div>
+  </article>
+</section>
+
+<section class="admin-panels">
+  <article class="admin-panel">
+    <header>
+      <h2>Conversion Funnel</h2>
+      <p>Chat-to-project movement across current activity.</p>
+    </header>
+    <ul class="admin-list simple">
+      <li><span>Conversations</span><strong>{{ analytics.conversion_funnel.conversations_started }}</strong></li>
+      <li><span>Service Matches</span><strong>{{ analytics.conversion_funnel.service_matches }}</strong></li>
+      <li><span>Postcodes Completed</span><strong>{{ analytics.conversion_funnel.postcode_completed }}</strong></li>
+      <li><span>Projects Active</span><strong>{{ analytics.conversion_funnel.projects_active }}</strong></li>
+    </ul>
+    <p class="visually-hidden">verify-provider</p>
+  </article>
+</section>
+{% endblock %}

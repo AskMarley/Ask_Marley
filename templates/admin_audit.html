@@ -1,0 +1,30 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+<section class="admin-panels">
+  <article class="admin-panel">
+    <header>
+      <h2>Audit Trail</h2>
+      <p>Chronological governance log for admin actions.</p>
+    </header>
+
+    <ul class="admin-list">
+      {% if audit_trail %}
+        {% for event in audit_trail %}
+          <li>
+            <div class="row-head">
+              <strong>{{ event.action }}</strong>
+              <span class="status-pill">{{ event.timestamp }}</span>
+            </div>
+            <p>{{ event.provider_name }} | Actor: {{ event.actor }}</p>
+            <small>Reason: {{ event.reason }}</small>
+            <p><small>Before: {{ event.before }}</small></p>
+            <p><small>After: {{ event.after }}</small></p>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No audit actions recorded yet.</li>
+      {% endif %}
+    </ul>
+  </article>
+</section>
+{% endblock %}

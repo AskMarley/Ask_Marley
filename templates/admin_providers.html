@@ -1,0 +1,92 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+<section class="admin-panels two-col">
+  <article class="admin-panel wide">
+    <header>
+      <h2>Provider Verification Queue</h2>
+      <p>Approve, suspend, reactivate, and manage tier overrides.</p>
+    </header>
+
+    <div class="provider-card-grid">
+      {% for provider in provider_signups %}
+        <article class="provider-card">
+          <h3>{{ provider.name }}</h3>
+          <p>{{ provider.service_path }}</p>
+          <p>Postcodes: {{ provider.postcodes }}</p>
+          <p>
+            <span class="status-pill">{{ provider.status|title }}</span>
+            <span class="status-pill">{{ provider.tier|title }}</span>
+            <span class="status-pill">Verified: {{ 'Yes' if provider.verified else 'No' }}</span>
+          </p>
+
+          <div class="inline-actions compact">
+            <form method="post" class="admin-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="verify-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for verification" required>
+              <button class="btn btn-primary" type="submit">Mark Verified</button>
+            </form>
+
+            <form method="post" class="admin-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="ban-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for suspension" required>
+              <button class="btn btn-danger" type="submit">Suspend</button>
+            </form>
+
+            <form method="post" class="admin-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="reactivate-provider">
+              <input type="hidden" name="provider_name" value="{{ provider.name }}">
+              <input type="text" name="reason" placeholder="Reason for reactivation" required>
+              <button class="btn btn-light" type="submit">Reactivate</button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </article>
+
+  <aside class="admin-panel">
+    <header>
+      <h2>Tier Override</h2>
+      <p>Manual provider plan adjustment.</p>
+    </header>
+    <form method="post" class="admin-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="return_to" value="{{ request.path }}">
+      <input type="hidden" name="action" value="override-tier">
+      <input type="text" name="provider_name" placeholder="Provider name" required>
+      <select name="new_tier">
+        <option value="basic">Basic</option>
+        <option value="plus">Plus</option>
+        <option value="premium">Premium</option>
+      </select>
+      <input type="text" name="reason" placeholder="Reason for tier override" required>
+      <button class="btn btn-primary" type="submit">Apply Tier</button>
+    </form>
+
+    <header class="stacked-header">
+      <h2>Recent Audit Events</h2>
+    </header>
+    <ul class="admin-list">
+      {% if audit_trail %}
+        {% for event in audit_trail[:8] %}
+          <li>
+            <strong>{{ event.action }}</strong>
+            <p>{{ event.provider_name }} | {{ event.actor }}</p>
+            <small>{{ event.timestamp }}</small>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No audit actions recorded yet.</li>
+      {% endif %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

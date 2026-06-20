@@ -1,0 +1,77 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+<section class="admin-panels two-col">
+  <article class="admin-panel wide">
+    <header>
+      <h2>Taxonomy Manager</h2>
+      <p>Maintain service paths and activation states.</p>
+    </header>
+
+    <form method="post" class="admin-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="return_to" value="{{ request.path }}">
+      <input type="hidden" name="action" value="add-taxonomy">
+      <input type="text" name="category_path" placeholder="Branch > Category > Service" required>
+      <input type="text" name="reason" placeholder="Reason for adding taxonomy" required>
+      <button class="btn btn-primary" type="submit">Add Category</button>
+    </form>
+
+    <ul class="admin-list">
+      {% for entry in taxonomy %}
+        <li>
+          <div class="row-head">
+            <strong>{{ entry.branch_path }}</strong>
+            <span class="status-pill">Version {{ entry.version }}</span>
+          </div>
+          <p><small>Active: {{ 'Yes' if entry.active else 'No' }}</small></p>
+
+          <form method="post" class="admin-form inline-grid">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="{{ request.path }}">
+            <input type="hidden" name="action" value="edit-taxonomy">
+            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+            <input type="text" name="category_path" value="{{ entry.branch_path }}" required>
+            <input type="text" name="reason" placeholder="Reason for edit" required>
+            <button class="btn btn-light" type="submit">Update</button>
+          </form>
+
+          <form method="post" class="admin-form inline-grid">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="{{ request.path }}">
+            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+            {% if entry.active %}
+              <input type="hidden" name="action" value="deprecate-taxonomy">
+              <input type="text" name="reason" placeholder="Reason for deprecation" required>
+              <button class="btn btn-danger" type="submit">Deprecate</button>
+            {% else %}
+              <input type="hidden" name="action" value="reactivate-taxonomy">
+              <input type="text" name="reason" placeholder="Reason for reactivation" required>
+              <button class="btn btn-light" type="submit">Reactivate</button>
+            {% endif %}
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <aside class="admin-panel">
+    <header>
+      <h2>Version History</h2>
+      <p>Most recent taxonomy changes.</p>
+    </header>
+    <ul class="admin-list">
+      {% if taxonomy_versions %}
+        {% for version_event in taxonomy_versions[:14] %}
+          <li>
+            <strong>Entry {{ version_event.entry_id }} v{{ version_event.version }}</strong>
+            <p>{{ version_event.before_path or 'N/A' }} -> {{ version_event.after_path }}</p>
+            <small>{{ version_event.timestamp }} | {{ version_event.actor }} | {{ version_event.reason }}</small>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>No taxonomy version updates recorded yet.</li>
+      {% endif %}
+    </ul>
+  </aside>
+</section>
+{% endblock %}

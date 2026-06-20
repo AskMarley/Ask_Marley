@@ -1,0 +1,37 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+<section class="admin-panels">
+  <article class="admin-panel">
+    <header>
+      <h2>Safety & Moderation Queue</h2>
+      <p>Track and resolve reports with quick status transitions.</p>
+    </header>
+
+    <ul class="admin-list">
+      {% for flag in flagged_chats %}
+        <li>
+          <div class="row-head">
+            <strong>{{ flag.case_id }}</strong>
+            <span class="status-pill">{{ flag.severity|title }}</span>
+          </div>
+          <p>{{ flag.reason }}</p>
+          <small>{{ flag.participants }} | Source: {{ flag.source|default('system')|replace('-', ' ')|title }}</small>
+          <p><small>Status: {{ flag.status|default('open')|title }} | Reporter: {{ flag.reported_by|default('system') }}</small></p>
+          <form method="post" class="admin-form inline-grid">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="return_to" value="{{ request.path }}">
+            <input type="hidden" name="action" value="moderation-status">
+            <input type="hidden" name="case_id" value="{{ flag.case_id }}">
+            <select name="new_status">
+              {% for state in moderation_statuses %}
+                <option value="{{ state }}" {% if state == flag.status %}selected{% endif %}>{{ state|title }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-light" type="submit">Update Status</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </article>
+</section>
+{% endblock %}
