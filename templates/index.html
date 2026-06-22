@@ -78,6 +78,48 @@
   </section>
 
   <!-- ==========================================================================
+       SECTION 1.5: USE CASE CAROUSEL
+       ========================================================================== -->
+  <section class="carousel-section">
+    <div class="carousel-container">
+      <div class="carousel-track" id="carouselTrack">
+        <div class="carousel-slide active">
+          <h2>Need a <span class="highlight-red">plumber?</span></h2>
+          <p>Ask Marley — get matched in 90 seconds</p>
+          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
+        </div>
+        <div class="carousel-slide">
+          <h2>Looking for a <span class="highlight-red">stylist?</span></h2>
+          <p>Ask Marley — find your perfect match</p>
+          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
+        </div>
+        <div class="carousel-slide">
+          <h2>Need <span class="highlight-red">wedding planning?</span></h2>
+          <p>Ask Marley — expert professionals ready</p>
+          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
+        </div>
+        <div class="carousel-slide">
+          <h2>Looking for a <span class="highlight-red">gardener?</span></h2>
+          <p>Ask Marley — local experts waiting</p>
+          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
+        </div>
+        <div class="carousel-slide">
+          <h2>Need an <span class="highlight-red">electrician?</span></h2>
+          <p>Ask Marley — instant local connections</p>
+          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
+        </div>
+      </div>
+      <div class="carousel-dots" id="carouselDots">
+        <button class="carousel-dot active" data-slide="0" aria-label="Slide 1"></button>
+        <button class="carousel-dot" data-slide="1" aria-label="Slide 2"></button>
+        <button class="carousel-dot" data-slide="2" aria-label="Slide 3"></button>
+        <button class="carousel-dot" data-slide="3" aria-label="Slide 4"></button>
+        <button class="carousel-dot" data-slide="4" aria-label="Slide 5"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
        SECTION 2: PORTAL CONTROL CENTER (BENTO GRID SHORTCUTS)
        ========================================================================== -->
   <section class="portal-grid-section">
@@ -1404,7 +1446,41 @@
     playChatSequence();
 
     /* ------------------------------------------------------------------------
-       2. STICKY FLOATING WELCOME POPUP BALLOON
+       2. USE CASE CAROUSEL ROTATION
+       ------------------------------------------------------------------------ */
+    const carouselTrack = document.getElementById("carouselTrack");
+    const carouselDots = document.getElementById("carouselDots");
+    
+    if (carouselTrack && carouselDots) {
+      const slides = carouselTrack.querySelectorAll(".carousel-slide");
+      const dots = carouselDots.querySelectorAll(".carousel-dot");
+      let currentSlideIdx = 0;
+      
+      function showSlide(idx) {
+        slides.forEach(slide => slide.classList.remove("active"));
+        dots.forEach(dot => dot.classList.remove("active"));
+        
+        slides[idx].classList.add("active");
+        dots[idx].classList.add("active");
+        currentSlideIdx = idx;
+      }
+      
+      // Auto-rotate carousel every 5 seconds
+      setInterval(() => {
+        currentSlideIdx = (currentSlideIdx + 1) % slides.length;
+        showSlide(currentSlideIdx);
+      }, 5000);
+      
+      // Add click handlers to dots
+      dots.forEach((dot, idx) => {
+        dot.addEventListener("click", () => {
+          showSlide(idx);
+        });
+      });
+    }
+
+    /* ------------------------------------------------------------------------
+       3. STICKY FLOATING WELCOME POPUP BALLOON
        ------------------------------------------------------------------------ */
     const popupBalloon = document.getElementById("marleyChatPopup");
     const closePopupBtn = document.getElementById("closePopupBtn");
