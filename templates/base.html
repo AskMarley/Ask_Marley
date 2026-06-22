@@ -19,7 +19,7 @@
     
     <header class="topbar">
       <a class="brand" href="{{ url_for('main.home') }}">
-        <img class="brand-logo" src="{{ url_for('static', filename='marley.png') }}" alt="AskMarley logo badge">
+        <img class="brand-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
       </a>
 
       <!-- Mobile Navigation Hamburger -->
@@ -90,5 +90,19 @@
 
     <script src="{{ url_for('static', filename='base.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-links">
+          <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>
+          <span class="footer-divider">•</span>
+          <a href="{{ url_for('main.terms_and_conditions') }}">Terms & Conditions</a>
+          <span class="footer-divider">•</span>
+          <a href="mailto:support@askmarley.co.uk">Contact Support</a>
+        </div>
+        <p class="footer-copyright">&copy; 2026 AskMarley Limited. All rights reserved. GDPR Compliant.</p>
+      </div>
+    </footer>
   </body>
 </html>
