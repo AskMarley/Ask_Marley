@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+import os
+from pathlib import Path
+from werkzeug.utils import secure_filename
 
 from askmarley.data import PROVIDERS
 from askmarley.services.admin_ops import create_moderation_case
@@ -14,6 +17,13 @@ from askmarley.models import (
 )
 
 FLAGGED_TERMS = {"scam", "abuse", "idiot", "fraud", "threat"}
+ALLOWED_UPLOAD_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+UPLOAD_FOLDER = Path(__file__).parent.parent / "static" / "uploads"
+
+
+def _ensure_upload_dir():
+    """Create upload directory if it doesn't exist."""
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 def _default_projects():
@@ -156,7 +166,13 @@ def save_provider_to_project(session, project_id, provider_name):
     return True
 
 
-def add_pinboard_item(session, project_id, item_label):
+def add_pinboard_item(session, project_id, item_label, image_file=None):
+    """Add a pinboard item with optional image."""
+    image_path = None
+    
+    if image_file:
+        image_path = save_pinboard_image(project_id, image_file)
+    
     consumer = _get_persistent_consumer(session)
     if consumer:
         project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
@@ -167,6 +183,7 @@ def add_pinboard_item(session, project_id, item_label):
             ProjectPinboardItem(
                 project_id=project.id,
                 label=item_label,
+                image_path=image_path,
             )
         )
         db.session.commit()
@@ -176,10 +193,41 @@ def add_pinboard_item(session, project_id, item_label):
     if not project:
         return False
 
-    project["pinboard_items"].append(item_label)
+    # For session-based storage, store as dict with image reference
+    project["pinboard_items"].append({
+        "label": item_label,
+        "image": image_path
+    } if image_path else item_label)
     project["timeline"].append(f"Pinned: {item_label}")
     session.modified = True
     return True
+
+
+def save_pinboard_image(project_id, image_file):
+    """Save an uploaded image to the uploads folder and return the relative path."""
+    if not image_file or image_file.filename == "":
+        return None
+    
+    _ensure_upload_dir()
+    
+    filename = secure_filename(image_file.filename)
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        return None
+    
+    # Create a unique filename with project ID to avoid conflicts
+    import uuid
+    unique_name = f"pin_{project_id}_{uuid.uuid4().hex[:8]}_{filename}"
+    filepath = UPLOAD_FOLDER / unique_name
+    
+    try:
+        image_file.save(str(filepath))
+        # Return the relative path for use in HTML
+        return f"/static/uploads/{unique_name}"
+    except Exception as e:
+        print(f"Error saving pinboard image: {e}")
+        return None
 
 
 def get_all_provider_names():

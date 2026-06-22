@@ -35,7 +35,26 @@
           <h3>{{ project.name }}</h3>
           <p>Status: {{ project.status }}</p>
           <p><strong>Saved Providers:</strong> {{ project.saved_providers|join(', ') }}</p>
-          <p><strong>Pinboard:</strong> {{ project.pinboard_items|join(' | ') }}</p>
+          
+          {% if project.pinboard_items %}
+            <div class="pinboard-gallery">
+              <h4>Pinboard Items:</h4>
+              <div class="gallery-grid">
+                {% for item in project.pinboard_items %}
+                  <div class="gallery-item">
+                    {% if item is mapping and item.get('image') %}
+                      <img src="{{ item.image }}" alt="{{ item.label }}" loading="lazy">
+                      <p class="gallery-label">{{ item.label }}</p>
+                    {% elif item is string %}
+                      <p class="gallery-label">{{ item }}</p>
+                    {% else %}
+                      <p class="gallery-label">{{ item.label if item is mapping else item }}</p>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
 
           <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_save_provider', project_id=project.id, tier=user_tier_slug) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -48,10 +67,11 @@
             <button class="btn btn-light" type="submit">Save Provider</button>
           </form>
 
-          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_pinboard_add', project_id=project.id, tier=user_tier_slug) }}">
+          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_pinboard_add', project_id=project.id, tier=user_tier_slug) }}" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="pin_label" placeholder="Add pinboard item" required>
-            <button class="btn btn-light" type="submit">Add Pinboard Item</button>
+            <input type="text" name="pin_label" placeholder="Add pinboard item label" required>
+            <input type="file" name="pin_image" accept="image/*" style="font-size: 0.85rem; padding: 0.5rem;">
+            <button class="btn btn-light" type="submit">Add to Pinboard</button>
           </form>
 
           <a class="btn btn-primary" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>

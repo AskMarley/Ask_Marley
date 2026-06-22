@@ -104,6 +104,7 @@ class ProjectPinboardItem(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False, index=True)
     label = db.Column(db.String(255), nullable=False)
+    image_path = db.Column(db.String(500), nullable=True)  # Path to uploaded image
 
     project = db.relationship(
         "Project",

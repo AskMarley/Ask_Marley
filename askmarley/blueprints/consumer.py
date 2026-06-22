@@ -311,6 +311,7 @@ def clipboard_save_provider(project_id):
 @role_required("consumer")
 def clipboard_pinboard_add(project_id):
     pin_label = request.form.get("pin_label", "").strip()
+    pin_image = request.files.get("pin_image")
     tier = get_consumer_subscription(session)["effective_tier"]
 
     if get_consumer_subscription(session)["effective_tier"] == "free":
@@ -319,8 +320,8 @@ def clipboard_pinboard_add(project_id):
 
     if not pin_label:
         flash("Pinboard item cannot be empty.", "error")
-    elif add_pinboard_item(session, project_id, pin_label):
-        flash("Added item to pinboard.", "success")
+    elif add_pinboard_item(session, project_id, pin_label, image_file=pin_image):
+        flash("Added item to pinboard." + (" with image" if pin_image else ""), "success")
     else:
         flash("Project not found.", "error")
     return redirect(url_for("consumer.clipboard", tier=tier))
