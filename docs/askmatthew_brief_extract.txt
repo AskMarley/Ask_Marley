@@ -1,0 +1,233 @@
+PAGES: 6
+
+
+--- PAGE 1 ---
+
+Ask Matthew
+Need a ? Ask Matthew
+PROJECT SPECIFICATION & DEVELOPER BRIEF
+1. Project Overview & Core Vision
+Ask Matthew is an innovative, UK-focused services directory designed to transform how consumers find local
+businesses and how service providers source premium leads. Moving away from cluttered, ad-heavy legacy
+directories, Ask Matthew presents an entirely interactive, conversational web interface fronted by Matthewa
+soft, smiley, and exceptionally helpful cartoon robot mascot.
+Crucially, this platform utilizes a  Non-AI architecture. The interaction framework is built upon strict, pre-
+programmed rule-based decision trees and precise keyword matching. This eliminates high AI API overheads,
+guarantees total predictability, ensures blazing-fast directory processing, and entirely mitigates the risks of
+"hallucinations" or erratic outputs.
+Core Deliverable Summary: A highly responsive web application combining an engaging multi-turn
+conversational chat workflow with a traditional fallback search directory. The solution must handle a
+highly structured, tiered multi-location taxonomy of UK businesses, complete with a automated Stripe
+billing engine and localized geo-routing. 
+2. The Dual-Interface Architecture
+To capture different user behaviors, the platform must seamlessly integrate two distinct front-end experiences
+backed by a single central database layer.
+2.1 Interface A: The Conversational Chat Experience (Primary)
+When an end-user loads the homepage, they are immediately placed into a full-screen, clean chat window
+designed to replicate a modern mobile messaging app (such as WhatsApp or iMessage), matching the white,
+crisp blue, and vibrant red palette.
+Matthew's Static Opening Gambit:
+"What's the plan? Kitchen remodel? Birthday party? Weekly aesthetic & upkeep? Cleaner? The
+possibilities are endless. Need a. Ask Matthew" 
+Ask Matthew  2026 | Project Specification & Developer Brief 1
+
+
+--- PAGE 2 ---
+
+A. The Button-Driven Tree (Recommended Flow)
+Directly beneath the opening greeting, the UI must dynamically inject predefined, clickable choice buttons
+corresponding to macro-level service sectors (e.g., [Home & Trades], [Events & Parties]). As the user taps
+through successive layers, the application narrows the criteria down to a single service discipline and requests
+a UK Postcode.
+B. Text-Input Keyword Mapping (Search Alternative)
+If the user prefers to type natural text into the chat bar (e.g., "I need a pro to fix a leaky pipe in my bathroom"),
+the backend must filter the string against an arrayed dictionary of hardcoded synonyms.
+Example Syntax Evaluation: String contains ["pipe", "leaky", "tap", "radiator",
+"plumber"]  Instantly match user to node: Plumbing & Heating.
+Fallback Logic: If zero keyword matches occur, Matthew must respond gracefully: "I didn't quite catch
+that! Are you looking for Home Trades, Events, Lifestyle, or Wellness? Click an option below so I can help
+you out."
+2.2 Interface B: Manual Search & "Matthew's Choice" (Fallback)
+Directly below the primary chatbot interface, a clean link/action bar must read: "Prefer to browse? Search
+Matthew's  directory  yourself  and  see  Matthew's  Choice." Clicking  this  shifts  the  layout  or  redirects
+smoothly to a highly refined, traditional grid search interface.
+This UI allows users to select a category from a dropdown and input a UK postcode. The resulting layout split
+is highly prioritized to incentivize monetization:
+The "Matthew's Choice" Top Section: A high-visibility, visually premium spotlight zone pinned to the top
+of the search results page. This section displays matching Premium Tier members exclusively as polished
+cards with custom styling and badges.
+The Standard Results: Located directly underneath the spotlight zone, rendering Plus Tier listings next,
+and standard Basic Tier listings at the very bottom.
+3. Comprehensive Service Taxonomy (The Database
+Schema)
+The database must categorize service providers into the following exhaustive UK-wide taxonomy. Each leaf
+node represents a definitive business classification that can be indexed, searched, and filtered via postcode
+radiuses.
+ 
+ 
+ 
+ 
+Ask Matthew  2026 | Project Specification & Developer Brief 2
+
+
+--- PAGE 3 ---
+
+Branch A: Home, Trades & Construction
+Building & Structural: General Builders, Bricklayers, Extensions & Conversions, Loft Specialists,
+Plasterers, Damp Proofing, Scaffolding.
+Plumbing & Heating: Emergency Plumbers, Gas Safe Engineers, Boiler Servicing, Underfloor
+Heating.
+Electrical & Smart Home: Domestic Electricians, EV Charger Installers, Home Automation, Security
+& CCTV.
+Carpentry & Interiors: Carpenters & Joiners, Kitchen Fitters, Bathroom Installers, Painters &
+Decorators, Tilers, Flooring Specialists.
+External & Outdoors: Roofers, Chimney Sweeps, Gutter Cleaners, Landscape Gardeners, Tree
+Surgeons, Fencing Contractors, Driveway & Patio Layers, Handymen.
+Branch B: Domestic & Lifestyle Services
+Cleaning Operations: Domestic Home Cleaners, Deep/End-of-Tenancy Cleaners, Window Cleaners,
+Carpet & Upholstery Cleaners, Oven Cleaners.
+Property Upkeep & Safety: Locksmiths, Waste Removal & Rubbish Clearance, Pest Control.
+Logistics & Logistics: Man & Van Services, Removals Agencies, Packing Services, Storage Units.
+Pet Care Ecology: Veterinary Practices, Dog Walkers, Pet Groomers, Catteries & Kennels, House Pet
+Sitters.
+Child & Family Care: Nannies & Au Pairs, Babysitters, Registered Childminders.
+Branch C: Events, Parties & Entertainment
+Planning & Venues: Wedding Planners, Event Coordinators, Local Venue Hire.
+Catering & Hospitality: Mobile Event Caterers, Private Chefs, Mobile Bars, Bespoke Cake Designers.
+Entertainment: Event DJs, Live Bands & Singers, Children's Entertainers, Magicians, Photo Booth
+Hire.
+Production & Decor: Event Photographers, Videographers, Florists, Balloon Artists, Marquee & Tent
+Hire.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Ask Matthew  2026 | Project Specification & Developer Brief 3
+
+
+--- PAGE 4 ---
+
+Branch D: Personal Care, Wellness & Style
+Hair & Aesthetics: Hair Salons, Mobile Hairdressers, Barbers, Beauty Salons, Nail Technicians,
+Makeup Artists, Tattoo Artists.
+Fitness & Health: Personal Trainers, Yoga & Pilates Instructors, Physiotherapists, Chiropractors,
+Massage Therapists.
+Garment Support: Tailors & Alterations, Wardrobe Stylists, Dry Cleaning Delivery.
+Branch E: Automotive, Transport & Training
+Vehicle Maintenance: Mobile Mechanics, Garages (MOT & Servicing), Car Body Repairs, Tyre
+Fitters, Mobile Valeting & Detailing.
+Logistics & Driving: Local Taxi Firms, Private Chauffeurs, Coach/Minibus Hire, Driving Instructors.
+Tuition & Lessons: Academic Tutors (Primary/Secondary), Music Teachers, Language Instructors.
+4. Monetization Model & Database Tier Logic
+The  platform  operates  on  a  recurring  monthly  subscription  model.  Businesses  register,  select  their  tier,
+manage their profiles, and settle billing natively. The developer must structure listings according to these exact
+parameters:
+ 
+ 
+ 
+ 
+ 
+ 
+Ask Matthew  2026 | Project Specification & Developer Brief 4
+
+
+--- PAGE 5 ---
+
+Subscription TierMonthly
+Cost UI Data Structure & Limits Sorting & Matching Priority
+Basic Tier
+BASIC 3.00 / mo
+Text-only. Business Name, Phone
+Number, concise 150-character text
+biography. No active outbound links,
+images, or review displays.
+Bottom-level rendering priority.
+Sorted strictly alphabetically
+beneath all other higher tiers
+within a targeted postcode
+look-up.
+Plus Tier
+PLUS 15.00 / mo
+Rich Profile. Custom active external
+links to Web/Socials, company logo
+branding, a photo portfolio gallery
+(up to 6 images), and 5-star
+customer review plugin. Appends a
+"Verified Provider" icon.
+Mid-level priority. Surfaces
+automatically within the main
+conversational chat flow
+recommendation blocks above
+Basic Tier rows.
+Premium Tier
+PREMIUM 50.00 / mo
+Full Rich Profile. Immediate visibility
+across chatbot outputs. Direct
+qualification for the "Matthew's
+Choice" Spotlight manual directory
+card slots. Includes automated lead
+generation hooks.
+Absolute Priority.
+Programmed to populate the
+top spots. Features a dynamic
+random rotator algorithm if
+multiple premium accounts
+overlap in the same postcode
+coverage area.
+4.1 High-Value Technical Engine: Direct Lead Routing (Premium Exclusive)
+When an end-user completes a chatbot conversational stream to its conclusion (e.g., defines a concrete job
+spec like  "Emergency Plumber needed in M1") but does not immediately tap an outputted phone number,
+Matthew will transition to a lead capture interface:
+"I can send your requirements directly to our top-rated local experts so you don't have to call around. Drop
+your name and mobile number below, and Matthew's Choice providers will text you custom quotes in
+minutes!"
+Upon submission, the system must parse the location, check for Premium subscribers mapped to that specific
+postcode sector, and trigger an automated webhook executing instantaneous SMS and Email alerts to those
+specific  Premium  dashboards.  No  Basic  or  Plus  accounts  may  participate  in  this  lead  distribution
+stream.
+5. Technical Stack & Development Deliverables
+Developers are permitted to quote via an optimized Low-Code framework (e.g., Bubble or Webflow combined
+with Landbot.io or dynamic embedded custom JS components) or a lightweight code stack (e.g., React
+frontend, Node.js, and PostgreSQL). The core technical deliverables must meet the following metrics:
+Ask Matthew  2026 | Project Specification & Developer Brief 5
+
+
+--- PAGE 6 ---
+
+5.1 Geolocation Postcode Engine
+Must integrate an indexing structure utilizing the ONS (Office for National Statistics) Postcode Directory or
+a scalable equivalent to handle radius search operations (e.g., 5, 10, 25 miles from user's input).
+User input validation must accept and sanitize standard UK postcode formats (e.g., EC1A, M1, G1 1XW)
+seamlessly.
+5.2 Registration & Billing Self-Service Portal
+A secure onboarding flow enabling business owners to create accounts, map themselves to specific
+service categories (taxonomy nodes), input operational UK postcodes, and view their dashboard analytics.
+Native integration with Stripe Billing/Subscriptions to handle recurring monthly card payments, failed
+transactions, tier upgrades, and automated cancellations.
+5.3 Core Performance & SEO Targets
+Speed & Caching: Pre-compiled rule trees and localized database queries must result in sub-200ms
+processing responses for button interactions.
+Mobile-First Rendering: Over 85% of traffic is estimated to occur via mobile devices. The chatbot web
+view must behave identically to a native app environment with fluid fluid animation and smooth button
+interactions.
+SEO Structural Mapping: For the manual directory layout, the platform must systematically generate
+indexable, static programmatic URLs mapped by category and region (e.g., /cleaners/manchester) to
+guarantee organic Google indexing.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Ask Matthew  2026 | Project Specification & Developer Brief 6

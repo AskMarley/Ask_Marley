@@ -3,7 +3,7 @@
 {% block content %}
 <section class="portal-head">
   <div class="portal-brand-lockup">
-    <img class="portal-logo" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley logo badge">
+    <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
   </div>
   <h1>Consumer Portal</h1>
   <p>Talk to Marley to describe your problem and get instant local matches.</p>
@@ -14,7 +14,7 @@
     <div class="chat-header">
       <div>
         <h2 class="chat-title-with-icon">
-          <img class="chat-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+          <img class="chat-icon-image" src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley icon">
           Marley Concierge
         </h2>
         <p>Live triage and postcode matching</p>
@@ -26,7 +26,7 @@
       {% for msg in chat_log %}
         <div class="bubble-row {{ msg.sender }}">
           {% if msg.sender == 'marley' %}
-            <img class="chat-bubble-avatar" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+            <img class="chat-bubble-avatar" src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley icon">
           {% endif %}
           <div class="bubble">{{ msg.text }}</div>
         </div>
@@ -37,7 +37,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input name="message" type="text" placeholder="Type: I have a leaky pipe in SW1A..." autocomplete="off" required>
       <button class="btn btn-primary btn-icon-text" type="submit">
-        <img class="btn-icon-image" src="{{ url_for('static', filename='Marley ICON.jpeg') }}" alt="Marley icon">
+        <img class="btn-icon-image" src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley icon">
         Send
       </button>
     </form>
@@ -52,13 +52,13 @@
             <div class="provider-title">
               <strong>{{ p.name }}</strong>
               {% if p.marleys_choice %}
-                <span class="badge badge-gold">Marley's Choice</span>
+                <span class="badge badge-gold">AskMarley's Choice</span>
               {% endif %}
               {% if p.verified %}
                 <span class="badge">Verified</span>
               {% endif %}
             </div>
-            <p>Tier: {{ p.tier|title }} | Coverage: {{ p.postcodes|join(', ') }}</p>
+            <p><small>{{ p.postcodes|join(', ') }}</small></p>
           </li>
         {% endfor %}
       </ul>

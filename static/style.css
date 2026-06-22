@@ -55,8 +55,8 @@ body {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(1100px 460px at -5% -12%, rgba(6, 26, 64, 0.09), transparent 60%),
-    radial-gradient(900px 380px at 110% -20%, rgba(193, 18, 31, 0.08), transparent 58%),
+    radial-gradient(1100px 460px at -5% -12%, rgba(6, 26, 64, 0.12), transparent 60%),
+    radial-gradient(900px 380px at 110% -20%, rgba(193, 18, 31, 0.14), transparent 58%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.05));
   z-index: -1;
   pointer-events: none;
@@ -67,7 +67,7 @@ body {
    ========================================================================== */
 .topbar {
   padding: 0.85rem 1.5rem;
-  background: rgba(6, 26, 64, 0.95);
+  background: rgba(6, 26, 64, 0.97);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: var(--ice-white);
@@ -78,7 +78,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(193, 18, 31, 0.3);
 }
 
 .brand {
@@ -94,9 +94,9 @@ body {
 }
 
 .brand-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
@@ -282,13 +282,33 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   transition: var(--transition-smooth);
+  position: relative;
+}
+
+.card::before,
+.tier-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--crimson);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .info-card:hover,
 .card:hover,
 .tier-box:hover {
-  border-color: rgba(6, 26, 64, 0.15);
-  box-shadow: 0 15px 30px -10px rgba(6, 26, 64, 0.08);
+  border-color: rgba(193, 18, 31, 0.2);
+  box-shadow: 0 15px 30px -10px rgba(193, 18, 31, 0.12);
+}
+
+.card:hover::before,
+.tier-box:hover::before {
+  opacity: 1;
 }
 
 /* Preserving exact original padding configurations */
@@ -572,6 +592,7 @@ textarea:focus {
 .intent-list li {
   background: #f8fbff;
   border: 1px solid #deebff;
+  border-left: 3px solid var(--crimson);
   border-radius: var(--radius-md);
   padding: 0.85rem;
   transition: var(--transition-smooth);
@@ -580,8 +601,9 @@ textarea:focus {
 .provider-list li:hover,
 .intent-list li:hover {
   background: #ffffff;
-  border-color: rgba(6, 26, 64, 0.15);
-  box-shadow: 0 4px 12px rgba(6, 26, 64, 0.04);
+  border-color: rgba(193, 18, 31, 0.2);
+  border-left-color: var(--crimson);
+  box-shadow: 0 6px 16px rgba(193, 18, 31, 0.08);
 }
 
 .provider-title {
@@ -855,18 +877,23 @@ fieldset legend {
 
 .btn-primary:hover {
   background: var(--crimson-hover);
-  box-shadow: 0 6px 14px rgba(193, 18, 31, 0.25);
+  box-shadow: 0 8px 16px rgba(193, 18, 31, 0.3);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
 }
 
 .btn-light {
   background: #edf3ff;
   color: var(--royal-navy);
-  border: 1px solid rgba(6, 26, 64, 0.04);
+  border: 1px solid rgba(6, 26, 64, 0.06);
+  transition: all 0.2s ease;
 }
 
 .btn-light:hover {
-  background: #dee8fc;
+  background: #d5e4ff;
   color: var(--midnight);
+  border-color: var(--royal-navy);
+  transform: translateY(-2px);
 }
 
 .btn-danger {
