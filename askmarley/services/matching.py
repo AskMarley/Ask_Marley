@@ -9,6 +9,73 @@ UK_POSTCODE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Synonym mapping for improved search matching
+SYNONYMS = {
+    "emergency-plumber": [
+        "pipe",
+        "pipes",
+        "plumbing",
+        "burst",
+        "water",
+        "boiler",
+        "tap",
+        "taps",
+        "leaking",
+        "flooded",
+    ],
+    "electrician": [
+        "electric",
+        "electrics",
+        "power",
+        "wiring",
+        "socket",
+        "light",
+        "circuit",
+        "voltage",
+        "fuse",
+    ],
+    "cleaner": [
+        "cleaning",
+        "clean",
+        "dust",
+        "sweep",
+        "mop",
+        "vacuum",
+        "tidy",
+        "hygiene",
+    ],
+    "gardener": ["garden", "gardening", "hedge", "lawn", "mow", "plant", "soil", "grass"],
+    "roofer": [
+        "roof",
+        "roofing",
+        "tile",
+        "tiles",
+        "gutter",
+        "gutters",
+        "flashing",
+        "chimney",
+    ],
+    "stylist": [
+        "hair",
+        "salon",
+        "cut",
+        "color",
+        "style",
+        "beauty",
+        "makeup",
+        "nails",
+    ],
+    "wedding-planner": [
+        "wedding",
+        "marriage",
+        "bride",
+        "groom",
+        "ceremony",
+        "reception",
+        "event",
+    ],
+}
+
 PRIORITY_PHRASES = {
     "roofer": [
         "roof leak",
@@ -57,6 +124,7 @@ def is_valid_uk_postcode(postcode):
 def detect_service_details(message):
     lowered = message.lower()
 
+    # 1. Check priority phrases first (highest confidence)
     for slug, phrases in PRIORITY_PHRASES.items():
         if any(phrase in lowered for phrase in phrases):
             return {
@@ -66,11 +134,20 @@ def detect_service_details(message):
                 "options": [slug],
             }
 
+    # 2. Keyword and synonym matching
     match_scores = {}
+    
+    # Check keywords from SERVICE_INTENTS
     for slug, intent in SERVICE_INTENTS.items():
         score = sum(1 for keyword in intent["keywords"] if keyword in lowered)
         if score:
             match_scores[slug] = score
+    
+    # Check synonyms
+    for slug, synonyms in SYNONYMS.items():
+        synonym_score = sum(1 for synonym in synonyms if synonym in lowered)
+        if synonym_score:
+            match_scores[slug] = match_scores.get(slug, 0) + synonym_score * 0.7  # Weight synonyms slightly less than keywords
 
     if not match_scores:
         return {
