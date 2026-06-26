@@ -27,7 +27,10 @@ from askmarley.services.subscriptions import (
     get_consumer_subscription,
     update_consumer_subscription,
 )
-from askmarley.services.stripe_billing import create_consumer_checkout_session
+from askmarley.services.stripe_billing import (
+    create_billing_portal_session,
+    create_consumer_checkout_session,
+)
 from askmarley.services.transcript import log_concierge_message
 
 consumer_bp = Blueprint("consumer", __name__, url_prefix="/consumer")
@@ -968,6 +971,25 @@ def subscription_checkout():
         return redirect(url_for("consumer.subscription"))
 
     return redirect(checkout["url"])
+
+
+@consumer_bp.post("/subscription/portal")
+@role_required("consumer")
+def subscription_portal():
+    try:
+        portal = create_billing_portal_session(
+            secret_key=current_app.config.get("STRIPE_SECRET_KEY", ""),
+            return_url=(
+                current_app.config.get("STRIPE_BILLING_PORTAL_RETURN_URL")
+                or url_for("consumer.subscription", _external=True)
+            ),
+            user=session.get("auth_user"),
+        )
+    except Exception as exc:
+        flash(f"Unable to open billing portal: {exc}", "error")
+        return redirect(url_for("consumer.subscription"))
+
+    return redirect(portal["url"])
 
 
 @consumer_bp.get("/subscription/success")

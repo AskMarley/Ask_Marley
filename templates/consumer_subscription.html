@@ -83,6 +83,10 @@
   {% if stripe_enabled %}
     <div class="subscription-note">
       <p><small>💳 Secure payment processing with Stripe. Cancel anytime.</small></p>
+      <form method="post" action="{{ url_for('consumer.subscription_portal') }}" style="margin-top: 0.6rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-light" type="submit">Open Billing Portal</button>
+      </form>
     </div>
   {% endif %}
 </section>

@@ -1,8 +1,11 @@
+import logging
+
 from flask import Blueprint, current_app, jsonify, request, render_template
 
 from askmarley.services.stripe_billing import process_webhook_event
 
 main_bp = Blueprint("main", __name__)
+logger = logging.getLogger(__name__)
 
 
 @main_bp.get("/")
@@ -37,7 +40,8 @@ def stripe_webhook():
             secret_key=current_app.config.get("STRIPE_SECRET_KEY", ""),
             webhook_secret=current_app.config.get("STRIPE_WEBHOOK_SECRET", ""),
         )
-    except Exception as exc:
-        return jsonify({"status": "error", "message": str(exc)}), 400
+    except Exception:
+        logger.exception("Stripe webhook processing failed")
+        return jsonify({"status": "error", "message": "Webhook processing failed."}), 400
 
     return jsonify({"status": "ok", "event": event_type}), 200

@@ -649,6 +649,38 @@ def test_stripe_webhook_accepts_event_with_valid_processor():
     assert response.json["event"] == "checkout.session.completed"
 
 
+def test_stripe_webhook_hides_internal_errors():
+    client = app.test_client()
+    with patch("askmarley.blueprints.main.process_webhook_event") as mock_processor:
+        mock_processor.side_effect = RuntimeError("secret details")
+        response = client.post(
+            "/webhooks/stripe",
+            data=b"{}",
+            headers={"Stripe-Signature": "t=1,v1=fake"},
+        )
+
+    assert response.status_code == 400
+    assert response.json["status"] == "error"
+    assert response.json["message"] == "Webhook processing failed."
+
+
+def test_consumer_billing_portal_redirects_when_available():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    with patch("askmarley.blueprints.consumer.create_billing_portal_session") as mock_portal:
+        mock_portal.return_value = {"url": "https://billing.stripe.com/p/session_test"}
+        response = client.post(
+            "/consumer/subscription/portal",
+            data={"csrf_token": token},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 302
+    assert "billing.stripe.com" in response.headers["Location"]
+
+
 def test_free_tier_blocks_project_save_provider():
     client = app.test_client()
     _set_auth_user(client, role="consumer")

@@ -190,6 +190,19 @@ class Subscription(TimestampMixin, db.Model):
     plan_code = db.Column(db.String(40), nullable=False)
     pending_plan_code = db.Column(db.String(40), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="active")
+    stripe_customer_id = db.Column(db.String(120), nullable=True, index=True)
+    stripe_subscription_id = db.Column(db.String(120), nullable=True, index=True)
+    stripe_price_id = db.Column(db.String(120), nullable=True)
+    latest_invoice_id = db.Column(db.String(120), nullable=True)
+    latest_checkout_session_id = db.Column(db.String(120), nullable=True)
+
+
+class StripeWebhookEvent(TimestampMixin, db.Model):
+    __tablename__ = "stripe_webhook_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    stripe_event_id = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    event_type = db.Column(db.String(120), nullable=False)
 
 
 class AdminAuditLog(TimestampMixin, db.Model):

@@ -94,9 +94,19 @@ def create_app(config_name=None):
             inspector = inspect(db.engine)
             if inspector.has_table("subscriptions"):
                 subscription_columns = {column["name"] for column in inspector.get_columns("subscriptions")}
-                if "pending_plan_code" not in subscription_columns:
-                    with db.engine.begin() as connection:
+                with db.engine.begin() as connection:
+                    if "pending_plan_code" not in subscription_columns:
                         connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN pending_plan_code VARCHAR(40)"))
+                    if "stripe_customer_id" not in subscription_columns:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN stripe_customer_id VARCHAR(120)"))
+                    if "stripe_subscription_id" not in subscription_columns:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN stripe_subscription_id VARCHAR(120)"))
+                    if "stripe_price_id" not in subscription_columns:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN stripe_price_id VARCHAR(120)"))
+                    if "latest_invoice_id" not in subscription_columns:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN latest_invoice_id VARCHAR(120)"))
+                    if "latest_checkout_session_id" not in subscription_columns:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN latest_checkout_session_id VARCHAR(120)"))
             if inspector.has_table("projects"):
                 project_columns = {column["name"] for column in inspector.get_columns("projects")}
                 with db.engine.begin() as connection:
