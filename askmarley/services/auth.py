@@ -1,25 +1,41 @@
 from functools import wraps
 
-from flask import flash, redirect, request, session, url_for
+from flask import current_app, flash, has_app_context, redirect, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from askmarley.extensions import db
 from askmarley.models import User
 
-ALLOWED_SELF_REGISTER_ROLES = {"consumer", "provider"}
+ROLE_ALIASES = {
+    "consumer": "buyer",
+    "buyer": "buyer",
+    "provider": "seller",
+    "seller": "seller",
+    "admin": "admin",
+    "super_admin": "super_admin",
+}
+
+LEGACY_STORAGE_ROLES = {
+    "buyer": "consumer",
+    "seller": "provider",
+    "admin": "admin",
+    "super_admin": "super_admin",
+}
+
+ALLOWED_SELF_REGISTER_ROLES = {"consumer", "provider", "buyer", "seller"}
 ADMIN_ROLES = {"admin", "super_admin"}
 
 DEFAULT_USERS = [
     {
         "email": "consumer.demo@askmarley.local",
-        "full_name": "Demo Consumer",
+        "full_name": "Demo Buyer",
         "role": "consumer",
         "consumer_tier": "individual",
         "password": "demo-consumer",
     },
     {
         "email": "provider.demo@askmarley.local",
-        "full_name": "Demo Provider",
+        "full_name": "Demo Seller",
         "role": "provider",
         "consumer_tier": "free",
         "password": "demo-provider",
@@ -33,6 +49,31 @@ DEFAULT_USERS = [
     },
 ]
 
+
+def normalize_role(role):
+    return ROLE_ALIASES.get((role or "").strip().lower(), (role or "").strip().lower())
+
+
+def _role_storage_mode():
+    if has_app_context():
+        mode = str(current_app.config.get("ROLE_STORAGE_MODE", "legacy")).strip().lower()
+    else:
+        mode = "legacy"
+    return mode if mode in {"legacy", "canonical"} else "legacy"
+
+
+def storage_role(role):
+    normalized = normalize_role(role)
+    if _role_storage_mode() == "canonical":
+        return normalized
+    return LEGACY_STORAGE_ROLES.get(normalized, normalized)
+
+
+def role_matches(actual_role, *expected_roles):
+    actual = normalize_role(actual_role)
+    expected = {normalize_role(role) for role in expected_roles}
+    return actual in expected
+
 def ensure_default_users():
     for payload in DEFAULT_USERS:
         user = User.query.filter_by(email=payload["email"]).first()
@@ -40,7 +81,7 @@ def ensure_default_users():
             user = User(
                 email=payload["email"],
                 full_name=payload["full_name"],
-                role=payload["role"],
+                role=storage_role(payload["role"]),
                 consumer_tier=payload["consumer_tier"],
                 password_hash=generate_password_hash(payload["password"]),
             )
@@ -85,7 +126,7 @@ def has_any_role(*roles):
     current = get_current_user()
     if not current:
         return False
-    return current.get("role") in set(roles)
+    return role_matches(current.get("role"), *roles)
 
 
 def login_user(user):
@@ -110,26 +151,28 @@ def logout_user():
 
 def register_user(email, full_name, role, password, **kwargs):
     normalized_email = email.strip().lower()
-    if role not in ALLOWED_SELF_REGISTER_ROLES:
+    if (role or "").strip().lower() not in ALLOWED_SELF_REGISTER_ROLES:
         return False, "Invalid account type."
     if User.query.filter_by(email=normalized_email).first():
         return False, "An account already exists for that email."
 
+    stored_role = storage_role(role)
+
     user = User(
         email=normalized_email,
         full_name=full_name.strip(),
-        role=role,
-        consumer_tier="individual" if role == "consumer" else "free",
+        role=stored_role,
+        consumer_tier="individual" if role_matches(stored_role, "consumer") else "free",
         password_hash=generate_password_hash(password),
     )
     
-    # Populate consumer fields if registering as consumer
-    if role == "consumer":
+    # Populate buyer fields if registering as buyer/consumer.
+    if role_matches(stored_role, "consumer"):
         user.consumer_phone = kwargs.get("consumer_phone", "").strip()
         user.consumer_postcode = kwargs.get("consumer_postcode", "").strip()
     
-    # Populate provider fields if registering as provider
-    if role == "provider":
+    # Populate seller fields if registering as seller/provider.
+    if role_matches(stored_role, "provider"):
         user.company_name = kwargs.get("company_name", "").strip()
         user.phone = kwargs.get("phone", "").strip()
         user.business_reg_number = kwargs.get("business_reg_number", "").strip()

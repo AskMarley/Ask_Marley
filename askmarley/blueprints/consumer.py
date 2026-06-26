@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from uuid import uuid4
 
 from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, CONSUMER_TIER_PRIORITY, PROVIDERS, SERVICE_INTENTS, TIER_PRIORITY
-from askmarley.services.auth import get_current_user, role_required
+from askmarley.services.auth import get_current_user, role_matches, role_required
 from askmarley.services.collaboration import (
     add_pinboard_item,
     add_thread_pin,
@@ -33,7 +33,7 @@ from askmarley.services.transcript import log_concierge_message
 consumer_bp = Blueprint("consumer", __name__, url_prefix="/consumer")
 
 
-CONSUMER_CRM_ROLES = {"consumer", "admin", "super_admin"}
+CONSUMER_CRM_ROLES = {"consumer", "buyer", "admin", "super_admin"}
 ADMIN_ROLES = {"admin", "super_admin"}
 
 
@@ -105,14 +105,14 @@ def _welcome_message():
 def _has_consumer_crm_access(user):
     if not user:
         return False
-    return user.get("role") in CONSUMER_CRM_ROLES
+    return role_matches(user.get("role"), *CONSUMER_CRM_ROLES)
 
 
 def _is_admin_request():
     user = get_current_user()
     if not user:
         return False
-    return user.get("role") in ADMIN_ROLES
+    return role_matches(user.get("role"), *ADMIN_ROLES)
 
 
 def _default_chat_state():
@@ -599,11 +599,11 @@ def search():
 def provider_detail(provider_id):
     provider = next((entry for entry in PROVIDERS if entry["id"] == provider_id), None)
     if not provider:
-        flash("Provider not found.", "error")
+        flash("Seller not found.", "error")
         return redirect(url_for("consumer.chat"))
 
     service = SERVICE_INTENTS.get(provider["service_slug"], {})
-    # Consumer view should only receive public profile attributes.
+    # Buyer view should only receive public profile attributes.
     provider_public = {
         "id": provider["id"],
         "name": provider["name"],
@@ -624,7 +624,7 @@ def provider_detail(provider_id):
 def provider_contact(provider_id):
     provider = next((entry for entry in PROVIDERS if entry["id"] == provider_id), None)
     if not provider:
-        flash("Provider not found.", "error")
+        flash("Seller not found.", "error")
         return redirect(url_for("consumer.chat"))
 
     consumer_sub = get_consumer_subscription(session)
@@ -636,11 +636,11 @@ def provider_contact(provider_id):
         from askmarley.models import User
 
         consumer_user = db.session.get(User, auth_user_id)
-        if consumer_user and consumer_user.role == "consumer":
+        if consumer_user and role_matches(consumer_user.role, "consumer"):
             consumer_location = extract_uk_location_code(consumer_user.consumer_postcode or "")
 
     if consumer_sub["effective_tier"] == "free" and not _is_admin_request():
-        flash("Upgrade your plan to contact providers in project chat.", "warning")
+        flash("Upgrade your plan to contact sellers in project chat.", "warning")
         return redirect(url_for("consumer.subscription"))
 
     target_project = None
@@ -654,7 +654,7 @@ def provider_contact(provider_id):
             target_project = projects[0]
         else:
             if not can_manage_projects(session, len(projects)) and not _is_admin_request():
-                flash("You reached your project limit. Upgrade to start a provider chat.", "warning")
+                flash("You reached your project limit. Upgrade to start a seller chat.", "warning")
                 return redirect(url_for("consumer.subscription"))
             target_project = create_project(
                 session,
@@ -696,7 +696,7 @@ def clipboard():
         from askmarley.models import User
 
         consumer_user = db.session.get(User, auth_user_id)
-        if consumer_user and consumer_user.role == "consumer":
+        if consumer_user and role_matches(consumer_user.role, "consumer"):
             consumer_default_postcode = consumer_user.consumer_postcode or ""
     total_saved_providers = sum(len(project["saved_providers"]) for project in projects)
     total_pinboard_items = sum(len(project["pinboard_items"]) for project in projects)
@@ -798,11 +798,11 @@ def clipboard_save_provider(project_id):
     tier = get_consumer_subscription(session)["effective_tier"]
 
     if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
-        flash("Upgrade your plan to save providers to projects.", "warning")
+        flash("Upgrade your plan to save sellers to projects.", "warning")
         return redirect(url_for("consumer.clipboard", tier=tier))
 
     if not provider_name:
-        flash("Choose a provider before saving.", "error")
+        flash("Choose a seller before saving.", "error")
     elif save_provider_to_project(session, project_id, provider_name):
         flash(f"Saved provider to project: {provider_name}", "success")
     else:

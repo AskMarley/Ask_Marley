@@ -3,12 +3,12 @@
 <section class="admin-panels two-col">
   <article class="admin-panel wide">
     <header>
-      <h2>Provider Verification Queue</h2>
+      <h2>Seller Verification Queue</h2>
       <p>Approve, suspend, reactivate, and manage tier overrides.</p>
     </header>
 
     <div class="admin-toolbar provider-toolbar">
-      <input type="search" id="providerSearch" placeholder="Search provider, service, postcode">
+      <input type="search" id="providerSearch" placeholder="Search seller, service, postcode">
       <select id="providerStatusFilter">
         <option value="all">All statuses</option>
         <option value="pending">Pending</option>
@@ -22,7 +22,7 @@
         <option value="premium">Premium</option>
       </select>
       <button type="button" class="btn btn-light" id="providerCompactToggle" aria-pressed="false">Compact View</button>
-      <span class="result-meta" id="providerFilterCount">Showing {{ provider_signups|length }} providers</span>
+      <span class="result-meta" id="providerFilterCount">Showing {{ provider_signups|length }} sellers</span>
     </div>
 
     <form method="post" class="admin-form bulk-provider-form" id="bulkProviderActionForm">
@@ -110,13 +110,13 @@
   <aside class="admin-panel">
     <header>
       <h2>Tier Override</h2>
-      <p>Manual provider plan adjustment.</p>
+      <p>Manual seller plan adjustment.</p>
     </header>
     <form method="post" class="admin-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="return_to" value="{{ request.path }}">
       <input type="hidden" name="action" value="override-tier">
-      <input type="text" name="provider_name" placeholder="Provider name" required>
+      <input type="text" name="provider_name" placeholder="Seller name" required>
       <select name="new_tier">
         <option value="basic">Basic</option>
         <option value="plus">Plus</option>
@@ -162,9 +162,9 @@
     const compactToggle = document.getElementById("providerCompactToggle");
 
     const actionLabel = {
-      "verify-provider": "Provider verified",
-      "ban-provider": "Provider suspended",
-      "reactivate-provider": "Provider reactivated",
+      "verify-provider": "Seller verified",
+      "ban-provider": "Seller suspended",
+      "reactivate-provider": "Seller reactivated",
       "override-tier": "Tier override applied",
     };
 
@@ -204,7 +204,7 @@
       });
 
       if (countLabel) {
-        countLabel.textContent = `Showing ${visibleCount} provider${visibleCount === 1 ? "" : "s"}`;
+        countLabel.textContent = `Showing ${visibleCount} seller${visibleCount === 1 ? "" : "s"}`;
       }
     };
 

@@ -3,7 +3,7 @@
 {% block content %}
 <section class="portal-head">
   <h1>Super Admin Portal</h1>
-  <p>Operations dashboard for moderation, taxonomy, provider lifecycle, and analytics.</p>
+  <p>Operations dashboard for moderation, taxonomy, seller lifecycle, and analytics.</p>
   <p><strong>Signed in as:</strong> {{ admin_ctx.name }} ({{ admin_ctx.role|replace('_', ' ')|title }})</p>
 </section>
 
@@ -37,10 +37,10 @@
 
 <section class="split" style="margin-bottom: 1rem;">
   <article class="tier-box">
-    <h2>Provider Tier Distribution</h2>
+    <h2>Seller Tier Distribution</h2>
     <ul class="provider-list">
       {% for tier, count in analytics.provider_tier_counts.items() %}
-        <li><strong>{{ tier|title }}</strong><p>{{ count }} providers</p></li>
+        <li><strong>{{ tier|title }}</strong><p>{{ count }} sellers</p></li>
       {% endfor %}
     </ul>
   </article>
@@ -70,7 +70,7 @@
 
 <section class="split">
   <article>
-    <h2>Provider Verification Queue</h2>
+    <h2>Seller Verification Queue</h2>
     <div class="grid-cards">
       {% for provider in provider_signups %}
         <article class="card">
@@ -109,7 +109,7 @@
     <form method="post" class="admin-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="override-tier">
-      <input type="text" name="provider_name" placeholder="Provider name" required>
+      <input type="text" name="provider_name" placeholder="Seller name" required>
       <select name="new_tier">
         <option value="basic">Basic</option>
         <option value="plus">Plus</option>

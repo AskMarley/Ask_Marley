@@ -16,14 +16,14 @@
   <article class="admin-panel">
     <section class="consumer-crm-hero">
       <div class="consumer-crm-hero-copy">
-        <p class="admin-eyebrow">Consumer CRM</p>
+        <p class="admin-eyebrow">Buyer CRM</p>
         <h2>Relationships, plans, activity, and account control in one command view.</h2>
-        <p>Use this workspace to review who your consumers are, what they are doing, what plan they are on, and whether the account should be active.</p>
+        <p>Use this workspace to review who your buyers are, what they are doing, what plan they are on, and whether the account should be active.</p>
       </div>
 
       <div class="consumer-crm-summary-grid">
         <article class="consumer-summary-card">
-          <span>Total Consumers</span>
+          <span>Total Buyers</span>
           <strong id="consumerSummaryVisible">{{ crm.total }}</strong>
           <small>Visible in current view</small>
         </article>
@@ -35,19 +35,19 @@
         <article class="consumer-summary-card">
           <span>Projects Tracked</span>
           <strong>{{ crm.projects }}</strong>
-          <small>{{ crm.saved }} saved providers</small>
+          <small>{{ crm.saved }} saved sellers</small>
         </article>
         <article class="consumer-summary-card">
           <span>Pinboard Activity</span>
           <strong>{{ crm.pins }}</strong>
-          <small>Consumer media and notes</small>
+          <small>Buyer media and notes</small>
         </article>
       </div>
     </section>
 
     <section class="consumer-crm-toolbar-panel">
       <div class="admin-toolbar consumer-toolbar consumer-toolbar-grid">
-        <input type="search" id="consumerSearch" placeholder="Search consumer name, email, postcode">
+        <input type="search" id="consumerSearch" placeholder="Search buyer name, email, postcode">
         <select id="consumerStatusFilter">
           <option value="all">All account states</option>
           <option value="active">Active</option>
@@ -59,14 +59,14 @@
             <option value="{{ key }}">{{ tier.label }}</option>
           {% endfor %}
         </select>
-        <span class="result-meta" id="consumerFilterCount">Showing {{ consumers|length }} consumers</span>
+        <span class="result-meta" id="consumerFilterCount">Showing {{ consumers|length }} buyers</span>
       </div>
     </section>
 
     <div class="consumer-crm-workspace">
       <aside class="consumer-roster-panel">
         <div class="consumer-roster-head">
-          <p class="crm-kicker">Consumer Roster</p>
+          <p class="crm-kicker">Buyer Roster</p>
           <h3>Accounts</h3>
         </div>
         <div class="consumer-roster-list">
@@ -126,7 +126,7 @@
                 <strong>{{ selected_consumer.project_count }}</strong>
               </article>
               <article>
-                <span>Saved Providers</span>
+                <span>Saved Sellers</span>
                 <strong>{{ selected_consumer.saved_provider_count }}</strong>
               </article>
               <article>
@@ -269,8 +269,8 @@
           </div>
         {% else %}
           <section class="consumer-detail-empty">
-            <h3>No consumer selected</h3>
-            <p>Choose a consumer from the left to inspect profile data, activity, notes, and controls.</p>
+            <h3>No buyer selected</h3>
+            <p>Choose a buyer from the left to inspect profile data, activity, notes, and controls.</p>
           </section>
         {% endif %}
       </section>
@@ -308,7 +308,7 @@
       });
 
       if (countLabel) {
-        countLabel.textContent = `Showing ${visibleCount} consumer${visibleCount === 1 ? "" : "s"}`;
+        countLabel.textContent = `Showing ${visibleCount} buyer${visibleCount === 1 ? "" : "s"}`;
       }
 
       if (summaryVisible) {

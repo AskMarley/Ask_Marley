@@ -43,7 +43,7 @@ def build_admin_analytics(session):
     provider_registry = get_provider_registry(session)
     moderation_cases = get_moderation_cases(session)
 
-    consumers = User.query.filter_by(role="consumer").all()
+    consumers = User.query.filter(User.role.in_(("consumer", "buyer"))).all()
     consumer_tier_counts = {
         "free": 0,
         "student": 0,

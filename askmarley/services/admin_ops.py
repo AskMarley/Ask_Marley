@@ -480,7 +480,7 @@ def get_admin_audit_trail(session):
 
 
 def get_consumer_registry(session):
-    consumers = User.query.filter_by(role="consumer").order_by(User.updated_at.desc()).all()
+    consumers = User.query.filter(User.role.in_(("consumer", "buyer"))).order_by(User.updated_at.desc()).all()
     registry = []
     for consumer in consumers:
         subscription = (
@@ -530,7 +530,10 @@ def get_consumer_registry(session):
 
 
 def set_consumer_account_disabled(session, consumer_id, disabled, reason, actor):
-    consumer = User.query.filter_by(id=consumer_id, role="consumer").first()
+    consumer = User.query.filter(
+        User.id == consumer_id,
+        User.role.in_(("consumer", "buyer")),
+    ).first()
     if not consumer:
         return False, "Consumer not found."
 
@@ -560,7 +563,10 @@ def set_consumer_account_disabled(session, consumer_id, disabled, reason, actor)
 
 
 def update_consumer_plan_admin(session, consumer_id, tier, billing_status, reason, actor):
-    consumer = User.query.filter_by(id=consumer_id, role="consumer").first()
+    consumer = User.query.filter(
+        User.id == consumer_id,
+        User.role.in_(("consumer", "buyer")),
+    ).first()
     if not consumer:
         return False, "Consumer not found."
 

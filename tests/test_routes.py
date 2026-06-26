@@ -414,7 +414,7 @@ def test_provider_contact_route_blocks_free_tier():
     )
 
     assert response.status_code == 200
-    assert b"Upgrade your plan to contact providers" in response.data
+    assert b"Upgrade your plan to contact sellers" in response.data
 
 
 def test_health_route():
@@ -677,7 +677,7 @@ def test_provider_subscription_update():
         follow_redirects=True,
     )
     assert response.status_code == 200
-    assert b"Provider subscription updated" in response.data
+    assert b"Seller subscription updated" in response.data
 
 
 def test_admin_verify_provider_creates_audit_entry():
@@ -957,7 +957,7 @@ def test_consumer_registration_captures_profile_data():
         assert user.consumer_phone == "+44 20 7111 2222"
         assert user.consumer_postcode == "W1A 1AA"
         assert user.password_hash is not None
-        assert user.role == "consumer"
+        assert user.role in {"consumer", "buyer"}
 
 
 def test_admin_dashboard_analytics_render():
@@ -999,7 +999,7 @@ def test_admin_section_pages_render_for_admin():
     audit = client.get("/admin/audit")
 
     assert providers.status_code == 200
-    assert b"Provider Verification Queue" in providers.data
+    assert b"Seller Verification Queue" in providers.data
 
     assert moderation.status_code == 200
     assert b"Safety & Moderation Queue" in moderation.data
@@ -1160,7 +1160,7 @@ def test_admin_consumer_crm_page_renders():
     response = client.get("/admin/consumers")
 
     assert response.status_code == 200
-    assert b"Consumer CRM" in response.data
+    assert b"Buyer CRM" in response.data
     assert b"Relationships, plans, activity" in response.data
 
 

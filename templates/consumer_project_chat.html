@@ -14,8 +14,8 @@
         <p>Viewing as: {{ viewer|title }}</p>
       </div>
       <div class="tier-links">
-        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='consumer') }}">Consumer View</a>
-        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='provider') }}">Provider View</a>
+        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='consumer') }}">Buyer View</a>
+        <a href="{{ url_for('consumer.project_chat', project_id=project.id, viewer='provider') }}">Seller View</a>
         <a href="{{ url_for('consumer.clipboard') }}">Back to Clipboard</a>
       </div>
     </div>
@@ -68,7 +68,7 @@
       <button class="btn btn-light" type="submit">Add Pin</button>
     </form>
 
-    <p class="muted">Unread provider notifications: {{ thread.notifications.provider }}<br>Unread consumer notifications: {{ thread.notifications.consumer }}</p>
+    <p class="muted">Unread seller notifications: {{ thread.notifications.provider }}<br>Unread buyer notifications: {{ thread.notifications.consumer }}</p>
   </aside>
 </section>
 {% endblock %}

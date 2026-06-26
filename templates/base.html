@@ -32,15 +32,15 @@
       <!-- Portal Navigation (Responsive Flex Grid) -->
       <nav class="portal-nav" id="portalNav">
         <div class="nav-links">
-          {% if current_user and current_user.role == 'consumer' %}
+          {% if current_user and current_user.role in ['consumer', 'buyer'] %}
             <a href="{{ url_for('consumer.dashboard') }}" class="nav-btn">Dashboard</a>
           {% else %}
-            <a href="{{ url_for('consumer.chat') }}" class="nav-btn">Consumer</a>
+            <a href="{{ url_for('consumer.chat') }}" class="nav-btn">Buyer</a>
           {% endif %}
-          {% if current_user and current_user.role == 'provider' %}
-            <a href="{{ url_for('provider.dashboard') }}" class="nav-btn">Provider</a>
+          {% if current_user and current_user.role in ['provider', 'seller'] %}
+            <a href="{{ url_for('provider.dashboard') }}" class="nav-btn">Seller</a>
           {% else %}
-            <a href="{{ url_for('auth.login') }}" class="nav-btn secondary-btn">Provider Login</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-btn secondary-btn">Seller Login</a>
           {% endif %}
           {% if is_admin_user %}
             <a href="{{ url_for('admin.dashboard') }}" class="nav-btn admin-badge">Super Admin</a>
@@ -53,7 +53,7 @@
               <span class="user-avatar-placeholder">{{ current_user.full_name[0] | upper }}</span>
               <span class="user-details">
                 <span class="user-name">{{ current_user.full_name }}</span>
-                <span class="user-role">{{ current_user.role|title }}</span>
+                <span class="user-role">{% if current_user.role in ['consumer', 'buyer'] %}Buyer{% elif current_user.role in ['provider', 'seller'] %}Seller{% else %}{{ current_user.role|replace('_', ' ')|title }}{% endif %}</span>
               </span>
             </div>
             <form method="post" action="{{ url_for('auth.logout') }}" class="inline-logout">

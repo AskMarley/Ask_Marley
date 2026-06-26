@@ -497,7 +497,7 @@ def report_thread_message(session, project_id, message_index, reporter, reason):
 def build_provider_chat_summary(session):
     provider_user_id = session.get("auth_user_id")
     provider_user = db.session.get(User, provider_user_id) if provider_user_id else None
-    if provider_user and provider_user.role == "provider":
+    if provider_user and provider_user.role in {"provider", "seller"}:
         summaries = []
         threads = ChatThread.query.order_by(ChatThread.updated_at.desc()).all()
         for thread in threads:

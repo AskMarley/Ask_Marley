@@ -16,6 +16,7 @@ class BaseConfig:
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH_BYTES", 5 * 1024 * 1024))
     SECURITY_RATE_LIMIT = 120
     SECURITY_RATE_WINDOW = 60
+    ROLE_STORAGE_MODE = os.getenv("ROLE_STORAGE_MODE", "legacy").strip().lower()
 
 
 class DevelopmentConfig(BaseConfig):

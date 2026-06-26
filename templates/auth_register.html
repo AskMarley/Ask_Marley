@@ -6,7 +6,7 @@
     <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
   </div>
   <h1>Create Your Account</h1>
-  <p>Choose a consumer or provider account to unlock the right AskMarley workflow.</p>
+  <p>Choose a buyer or seller account to unlock the right AskMarley workflow.</p>
 </section>
 
 <section class="auth-shell">
@@ -28,14 +28,14 @@
         <div class="form-group">
           <label for="roleSelect">Account type</label>
           <select id="roleSelect" name="role">
-            <option value="consumer">Consumer</option>
-            <option value="provider">Provider</option>
+            <option value="consumer">Buyer</option>
+            <option value="provider">Seller</option>
           </select>
           <span class="form-help">Choose what fits your needs best.</span>
         </div>
       </fieldset>
       
-      <!-- Consumer-only fields -->
+      <!-- Buyer-only fields -->
       <fieldset class="form-section" id="consumerFields">
         <legend>Your Information</legend>
         <div class="form-group">
@@ -46,11 +46,11 @@
         <div class="form-group">
           <label for="consumerPostcode">Primary postcode</label>
           <input type="text" id="consumerPostcode" name="consumer_postcode" placeholder="SW1A 2AA">
-          <span class="form-help">We'll match local providers to you.</span>
+          <span class="form-help">We'll match local sellers to you.</span>
         </div>
       </fieldset>
       
-      <!-- Provider-only fields -->
+      <!-- Seller-only fields -->
       <fieldset class="form-section" id="providerFields" style="display:none;">
         <legend>Your Business</legend>
         <div class="form-group">
@@ -68,7 +68,7 @@
         </div>
       </fieldset>
       
-      <!-- Provider services -->
+      <!-- Seller services -->
       <fieldset class="form-section" id="providerServices" style="display:none;">
         <legend>Services You Offer</legend>
         <div class="form-group">
@@ -112,7 +112,7 @@
             <input type="checkbox" name="insurance_verified" value="true" id="insuranceVerified">
             <span>I have professional public liability insurance</span>
           </label>
-          <span class="form-help">This helps build trust with consumers.</span>
+          <span class="form-help">This helps build trust with buyers.</span>
         </div>
       </fieldset>
       
@@ -136,8 +136,8 @@
   <aside class="chat-sidepanel">
     <h3>Account Paths</h3>
     <ul class="provider-list">
-      <li><strong>Consumer</strong><p>Access clipboard, projects, subscriptions, and collaboration tools.</p></li>
-      <li><strong>Provider</strong><p>Access provider dashboard and provider subscription management.</p></li>
+      <li><strong>Buyer</strong><p>Access clipboard, projects, subscriptions, and collaboration tools.</p></li>
+      <li><strong>Seller</strong><p>Access seller dashboard and seller subscription management.</p></li>
     </ul>
   </aside>
 </section>

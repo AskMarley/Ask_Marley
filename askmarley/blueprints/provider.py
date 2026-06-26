@@ -3,7 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from askmarley.data import BILLING_STATUSES, PROVIDER_TIERS, SERVICE_INTENTS
 from askmarley.extensions import db
 from askmarley.models import ChatMessage, ChatThread, Project, User
-from askmarley.services.auth import role_required
+from askmarley.services.auth import role_matches, role_required
 from askmarley.services.collaboration import build_provider_chat_summary
 from askmarley.services.matching import detect_service_details, extract_uk_location_code
 from askmarley.services.subscriptions import (
@@ -28,7 +28,7 @@ def _get_provider_user():
     if not user_id:
         return None
     user = db.session.get(User, user_id)
-    if not user or user.role != "provider":
+    if not user or not role_matches(user.role, "provider"):
         return None
     return user
 
@@ -168,7 +168,7 @@ def _build_provider_leads():
             {
                 "id": project["id"],
                 "name": project["name"],
-                "customer": "Demo Consumer",
+                "customer": "Demo Buyer",
                 "status": project["status"].lower(),
                 "status_label": project["status"],
                 "saved_provider_count": len(project.get("saved_providers", [])),
@@ -202,7 +202,7 @@ def _build_provider_leads():
         if not match_details["matches"]:
             continue
 
-        consumer_name = project.user.full_name if project.user else "Consumer"
+        consumer_name = project.user.full_name if project.user else "Buyer"
         status = (project.status or "shortlisting").lower()
         leads.append(
             {
@@ -233,7 +233,7 @@ def _build_provider_leads():
                 {
                     "id": project["id"],
                     "name": project["name"],
-                    "customer": "Demo Consumer",
+                    "customer": "Demo Buyer",
                     "status": fallback_status,
                     "status_label": project["status"],
                     "saved_provider_count": len(project.get("saved_providers", [])),
@@ -287,7 +287,7 @@ def dashboard():
         chats = [
             {
                 "customer": "No active project threads yet",
-                "latest": "Consumer project chats will appear here once opened.",
+                "latest": "Buyer project chats will appear here once opened.",
                 "pinboard_count": 0,
                 "provider_unread": 0,
             }
@@ -333,7 +333,7 @@ def subscription():
         tier = request.form.get("tier", "basic")
         billing_status = request.form.get("billing_status", "active")
         update_provider_subscription(session, tier, billing_status)
-        flash("Provider subscription updated.", "success")
+        flash("Seller subscription updated.", "success")
         return redirect(url_for("provider.subscription"))
 
     provider_sub = get_provider_subscription(session)

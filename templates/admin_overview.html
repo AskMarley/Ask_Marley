@@ -12,7 +12,7 @@
 <section class="admin-panels two-col">
   <article class="admin-panel">
     <header>
-      <h2>Consumer Mix</h2>
+      <h2>Buyer Mix</h2>
       <p>Current active account distribution.</p>
     </header>
     <ul class="admin-list simple">
@@ -26,8 +26,8 @@
 
   <article class="admin-panel">
     <header>
-      <h2>Provider Tier Distribution</h2>
-      <p>Live provider positioning by plan.</p>
+      <h2>Seller Tier Distribution</h2>
+      <p>Live seller positioning by plan.</p>
     </header>
     <ul class="admin-list simple">
       {% for tier, count in analytics.provider_tier_counts.items() %}
@@ -41,13 +41,13 @@
   <article class="admin-panel">
     <header>
       <h2>Geography Heatmap</h2>
-      <p>Highest provider density by outward code.</p>
+      <p>Highest seller density by outward code.</p>
     </header>
     <div class="chip-grid">
       {% for row in analytics.geography_heatmap %}
         <div class="density-chip">
           <strong>{{ row.outward_code }}</strong>
-          <span>{{ row.provider_count }} providers</span>
+          <span>{{ row.provider_count }} sellers</span>
         </div>
       {% endfor %}
     </div>
@@ -59,7 +59,7 @@
       <p>Jump straight to your key workflows.</p>
     </header>
     <div class="quick-actions">
-      <a class="btn btn-primary" href="{{ url_for('admin.providers_page') }}">Review Providers</a>
+      <a class="btn btn-primary" href="{{ url_for('admin.providers_page') }}">Review Sellers</a>
       <a class="btn btn-light" href="{{ url_for('admin.moderation_page') }}">Moderation Queue</a>
       <a class="btn btn-light" href="{{ url_for('admin.taxonomy_page') }}">Edit Taxonomy</a>
       <a class="btn btn-light" href="{{ url_for('admin.audit_page') }}">View Audit Trail</a>

@@ -19,7 +19,7 @@
     <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
   </div>
   <h1>Sign In</h1>
-  <p>Continue to your consumer, provider, or admin workflow in one secure place.</p>
+  <p>Continue to your buyer, seller, or admin workflow in one secure place.</p>
 </section>
 
 <section class="auth-shell login-shell">
@@ -63,12 +63,12 @@
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="target" value="consumer">
-        <button class="btn btn-light demo-btn" type="submit">Demo Consumer</button>
+        <button class="btn btn-light demo-btn" type="submit">Demo Buyer</button>
       </form>
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="target" value="provider">
-        <button class="btn btn-light demo-btn" type="submit">Demo Provider</button>
+        <button class="btn btn-light demo-btn" type="submit">Demo Seller</button>
       </form>
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

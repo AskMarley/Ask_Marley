@@ -8,7 +8,7 @@
   <div>
     <p class="admin-eyebrow">Control Room</p>
     <h1>Super Admin Portal</h1>
-    <p>Keep operations clean across providers, moderation, taxonomy, and platform insights.</p>
+    <p>Keep operations clean across sellers, moderation, taxonomy, and platform insights.</p>
   </div>
   <div class="admin-identity">
     <span class="admin-avatar">{{ admin_ctx.name[0] | upper }}</span>
@@ -21,8 +21,8 @@
 
 <nav class="admin-tabs" aria-label="Admin sections">
   <a href="{{ url_for('admin.dashboard') }}" class="admin-tab{% if active_page == 'overview' %} is-active{% endif %}">Overview</a>
-  <a href="{{ url_for('admin.consumers_page') }}" class="admin-tab{% if active_page == 'consumers' %} is-active{% endif %}">Consumers</a>
-  <a href="{{ url_for('admin.providers_page') }}" class="admin-tab{% if active_page == 'providers' %} is-active{% endif %}">Providers</a>
+  <a href="{{ url_for('admin.consumers_page') }}" class="admin-tab{% if active_page == 'consumers' %} is-active{% endif %}">Buyers</a>
+  <a href="{{ url_for('admin.providers_page') }}" class="admin-tab{% if active_page == 'providers' %} is-active{% endif %}">Sellers</a>
   <a href="{{ url_for('admin.moderation_page') }}" class="admin-tab{% if active_page == 'moderation' %} is-active{% endif %}">Moderation</a>
   <a href="{{ url_for('admin.taxonomy_page') }}" class="admin-tab{% if active_page == 'taxonomy' %} is-active{% endif %}">Taxonomy</a>
   <a href="{{ url_for('admin.audit_page') }}" class="admin-tab{% if active_page == 'audit' %} is-active{% endif %}">Audit Trail</a>

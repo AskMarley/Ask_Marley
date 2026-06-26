@@ -42,7 +42,7 @@ def _sync_user_subscription(user_id, plan_code, status):
         sub.plan_code = plan_code
         sub.status = status
 
-    if user.role == "consumer":
+    if user.role in {"consumer", "buyer"}:
         user.consumer_tier = plan_code
 
     db.session.commit()

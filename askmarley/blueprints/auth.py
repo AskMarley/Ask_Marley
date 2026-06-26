@@ -7,6 +7,8 @@ from askmarley.services.auth import (
     login_user,
     logout_user,
     register_user,
+    role_matches,
+    storage_role,
 )
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -21,14 +23,15 @@ def register():
         full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         role = request.form.get("role", "consumer").strip()
+        stored_role = storage_role(role)
         password = request.form.get("password", "")
 
         if not full_name or not email or not password:
             flash("Name, email, and password are required.", "error")
             return redirect(url_for("auth.register"))
         
-        # Provider registration validation
-        if role == "provider":
+        # Seller registration validation
+        if role_matches(stored_role, "provider"):
             company_name = request.form.get("company_name", "").strip()
             phone = request.form.get("phone", "").strip()
             business_reg_number = request.form.get("business_reg_number", "").strip()
@@ -37,7 +40,7 @@ def register():
             insurance_verified = request.form.get("insurance_verified", "")
             
             if not company_name or not phone or not service_categories or not travel_postcodes:
-                flash("Provider registration requires company name, phone, service categories, and travel postcodes.", "error")
+                flash("Seller registration requires company name, phone, service categories, and travel postcodes.", "error")
                 return redirect(url_for("auth.register"))
             
             ok, result = register_user(
@@ -54,7 +57,7 @@ def register():
             consumer_postcode = request.form.get("consumer_postcode", "").strip()
             
             if not consumer_postcode:
-                flash("Postcode is required for consumer registration.", "error")
+                flash("Postcode is required for buyer registration.", "error")
                 return redirect(url_for("auth.register"))
             
             ok, result = register_user(
@@ -69,7 +72,7 @@ def register():
         user = result
         login_user(user)
         flash("Account created and signed in.", "success")
-        if user.role == "provider":
+        if role_matches(user.role, "provider"):
             return redirect(url_for("provider.dashboard"))
         return redirect(url_for("consumer.dashboard"))
 
@@ -103,7 +106,7 @@ def login():
         flash("Welcome back.", "success")
         if next_url:
             return redirect(next_url)
-        if user.role == "provider":
+        if role_matches(user.role, "provider"):
             return redirect(url_for("provider.dashboard"))
         if user.role in {"admin", "super_admin"}:
             return redirect(url_for("admin.dashboard"))
@@ -121,7 +124,8 @@ def logout():
 
 @auth_bp.post("/demo-login")
 def demo_login():
-    target = request.form.get("target", "consumer")
+    target = request.form.get("target", "consumer").strip().lower()
+    target = "consumer" if target == "buyer" else ("provider" if target == "seller" else target)
     email_map = {
         "consumer": "consumer.demo@askmarley.local",
         "provider": "provider.demo@askmarley.local",
@@ -133,7 +137,8 @@ def demo_login():
         flash("Demo account is unavailable.", "error")
         return redirect(url_for("auth.login"))
     login_user(user)
-    flash(f"Signed in as demo {target} account.", "success")
+    target_label = {"consumer": "buyer", "provider": "seller", "admin": "admin"}.get(target, target)
+    flash(f"Signed in as demo {target_label} account.", "success")
     if target == "provider":
         return redirect(url_for("provider.dashboard"))
     if target == "admin":

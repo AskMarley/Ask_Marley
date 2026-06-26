@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}AskMarley | Provider Details{% endblock %}
+{% block title %}AskMarley | Seller Details{% endblock %}
 {% block content %}
 <section class="portal-head">
   <div class="portal-brand-lockup">
     <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
   </div>
   <h1>{{ provider.name }}</h1>
-  <p>Provider profile summary and coverage details.</p>
+  <p>Seller profile summary and coverage details.</p>
 </section>
 
 <section class="panel provider-detail-panel">
@@ -30,10 +30,10 @@
   <div class="provider-detail-actions">
     <form method="post" action="{{ url_for('consumer.provider_contact', provider_id=provider.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-primary" type="submit">Start Chat with Provider</button>
+      <button class="btn btn-primary" type="submit">Start Chat with Seller</button>
     </form>
     <a class="btn btn-light" href="{{ url_for('consumer.chat') }}">Back to Chat</a>
-    <a class="btn btn-primary" href="{{ url_for('consumer.search', q=service.name if service.name else provider.service_slug) }}">Find Similar Providers</a>
+    <a class="btn btn-primary" href="{{ url_for('consumer.search', q=service.name if service.name else provider.service_slug) }}">Find Similar Sellers</a>
   </div>
 </section>
 {% endblock %}

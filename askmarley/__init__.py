@@ -141,3 +141,40 @@ def register_cli(app):
         """Seed baseline taxonomy and provider data."""
         seed_baseline_data()
         click.echo("Seeded baseline AskMarley data.")
+
+    @app.cli.command("migrate-role-labels")
+    @click.option(
+        "--direction",
+        type=click.Choice(["canonical", "legacy"], case_sensitive=False),
+        default="canonical",
+        show_default=True,
+        help="canonical maps consumer/provider to buyer/seller; legacy reverts buyer/seller to consumer/provider.",
+    )
+    @click.option("--apply", is_flag=True, help="Persist changes. Omit for dry-run.")
+    def migrate_role_labels_command(direction, apply):
+        """Migrate stored user role labels between legacy and canonical naming."""
+        from askmarley.models import User
+
+        canonical_map = {"consumer": "buyer", "provider": "seller"}
+        legacy_map = {"buyer": "consumer", "seller": "provider"}
+        role_map = canonical_map if direction == "canonical" else legacy_map
+
+        users = User.query.filter(User.role.in_(tuple(role_map.keys()))).order_by(User.id.asc()).all()
+        if not users:
+            click.echo("No user roles require migration for the selected direction.")
+            return
+
+        click.echo(f"Found {len(users)} user(s) to migrate ({direction}).")
+        for user in users[:20]:
+            click.echo(f"- id={user.id} {user.email}: {user.role} -> {role_map[user.role]}")
+        if len(users) > 20:
+            click.echo(f"...and {len(users) - 20} more")
+
+        if not apply:
+            click.echo("Dry-run only. Re-run with --apply to persist changes.")
+            return
+
+        for user in users:
+            user.role = role_map[user.role]
+        db.session.commit()
+        click.echo(f"Role migration applied successfully for {len(users)} user(s).")
