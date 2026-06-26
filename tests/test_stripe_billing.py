@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import Mock, patch
 
 from flask_app import app
@@ -31,8 +32,9 @@ def _stripe_stub(event_payload):
 def test_process_webhook_event_is_idempotent_for_duplicate_event_id():
     with app.app_context():
         user = _ensure_test_user("stripe.idempotent.user@askmarley.local")
+        event_id = f"evt_idempotent_{uuid.uuid4().hex}"
         event = {
-            "id": "evt_idempotent_1",
+            "id": event_id,
             "type": "checkout.session.completed",
             "data": {
                 "object": {
@@ -60,12 +62,13 @@ def test_process_webhook_event_is_idempotent_for_duplicate_event_id():
 
         assert first == "checkout.session.completed"
         assert second == "checkout.session.completed:duplicate"
-        assert StripeWebhookEvent.query.filter_by(stripe_event_id="evt_idempotent_1").count() == 1
+        assert StripeWebhookEvent.query.filter_by(stripe_event_id=event_id).count() == 1
 
 
 def test_invoice_payment_succeeded_updates_subscription_without_metadata_user_id():
     with app.app_context():
         user = _ensure_test_user("stripe.invoice.user@askmarley.local")
+        event_id = f"evt_invoice_paid_{uuid.uuid4().hex}"
         sub = (
             Subscription.query.filter_by(user_id=user.id)
             .order_by(Subscription.updated_at.desc())
@@ -89,7 +92,7 @@ def test_invoice_payment_succeeded_updates_subscription_without_metadata_user_id
             db.session.commit()
 
         event = {
-            "id": "evt_invoice_paid_1",
+            "id": event_id,
             "type": "invoice.payment_succeeded",
             "data": {
                 "object": {
