@@ -2,46 +2,102 @@
 {% block title %}AskMarley | Consumer Subscription{% endblock %}
 {% block content %}
 <section class="portal-head">
+  <p class="portal-kicker">Billing & Plan</p>
   <h1>Consumer Subscription</h1>
-  <p>Manage your consumer plan, billing state, and feature entitlements.</p>
+  <p>Unlock more projects and features. Choose the plan that fits your workflow.</p>
 </section>
 
-<section class="split">
-  <article class="tier-box">
-    <h3>Current Subscription</h3>
-    <p><strong>Selected Tier:</strong> {{ consumer_sub.selected_tier|title }}</p>
-    <p><strong>Effective Tier:</strong> {{ consumer_sub.effective_tier|title }}</p>
-    <p><strong>Billing Status:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
-    <p><strong>Project Limit:</strong> {{ consumer_sub.plan.max_projects if consumer_sub.plan.max_projects != 999 else 'Unlimited' }}</p>
-
-    <form class="admin-form" method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label>Plan</label>
-      <select name="tier">
-        {% for key, tier in tiers.items() %}
-          <option value="{{ key }}" {% if key == consumer_sub.selected_tier %}selected{% endif %}>{{ tier.label }} ({{ tier.price }})</option>
-        {% endfor %}
-      </select>
-      <label>Billing Status</label>
-      <select name="billing_status">
-        {% for key, label in billing_statuses.items() %}
-          <option value="{{ key }}" {% if key == consumer_sub.billing_status %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-      <button class="btn btn-primary" type="submit">Update Subscription</button>
-    </form>
-  </article>
-
-  <aside class="chat-sidepanel">
-    <h3>Plan Entitlements</h3>
-    <ul class="provider-list">
-      <li><strong>Free</strong><p>Search only. No active projects.</p></li>
-      <li><strong>Student</strong><p>1 active project.</p></li>
-      <li><strong>Individual</strong><p>3 active projects.</p></li>
-      <li><strong>Business</strong><p>Up to 10 active projects.</p></li>
-      <li><strong>Business Plus</strong><p>Unlimited active projects.</p></li>
-    </ul>
-    <a class="btn btn-light" href="{{ url_for('consumer.clipboard') }}">Back to Clipboard</a>
-  </aside>
+<section class="consumer-current-plan">
+  <div class="current-plan-card">
+    <h3>Your Current Plan</h3>
+    <p class="plan-name">{{ consumer_sub.plan.label }}</p>
+    <p class="plan-price">{{ consumer_sub.plan.price }}</p>
+    <p class="plan-feature"><strong>{{ consumer_sub.plan.max_projects if consumer_sub.plan.max_projects != 999 else 'Unlimited' }}</strong> active projects</p>
+    <p class="plan-status">Status: <strong>{{ consumer_sub.billing_status|replace('_', ' ')|title }}</strong></p>
+    {% if consumer_sub.pending_tier %}
+      <p class="plan-status"><strong>Next billing:</strong> {{ consumer_sub.pending_plan.label }} after this cycle ends</p>
+    {% endif %}
+  </div>
 </section>
+
+<section class="consumer-tier-section">
+  <header class="tier-section-head">
+    <h2>Choose Your Plan</h2>
+    <p>All plans include Marley AI provider matching and project boards.</p>
+  </header>
+
+  <div class="consumer-tier-grid">
+    {% for key, tier in tiers.items() %}
+      {% set current_rank = consumer_tier_priority[consumer_sub.selected_tier] %}
+      {% set tier_rank = consumer_tier_priority[key] %}
+      <article class="consumer-tier-card {% if key == consumer_sub.selected_tier %}is-current{% endif %}">
+        {% if key == consumer_sub.selected_tier %}
+          <span class="tier-badge">Current Plan</span>
+        {% endif %}
+
+        <h3 class="tier-name">{{ tier.label }}</h3>
+        <p class="tier-price">{{ tier.price }}</p>
+        <p class="tier-desc">per month</p>
+
+        <div class="tier-features">
+          <p class="tier-feature">
+            <strong>{{ tier.max_projects if tier.max_projects != 999 else 'Unlimited' }}</strong> active projects
+          </p>
+          {% if key != 'free' %}
+            <p class="tier-feature">Unlimited provider matches</p>
+            <p class="tier-feature">Pinboard media gallery</p>
+            <p class="tier-feature">Full project chat</p>
+          {% else %}
+            <p class="tier-feature">Search providers only</p>
+            <p class="tier-feature">No active projects</p>
+          {% endif %}
+        </div>
+
+        {% if key == consumer_sub.selected_tier %}
+          <button class="btn btn-light" disabled>Current Plan</button>
+        {% elif tier_rank > current_rank and stripe_enabled %}
+          <form method="post" action="{{ url_for('consumer.subscription_checkout') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="tier" value="{{ key }}">
+            <button class="btn btn-primary" type="submit">Upgrade Now</button>
+          </form>
+        {% elif tier_rank < current_rank %}
+          <form method="post" action="{{ url_for('consumer.subscription_checkout') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="tier" value="{{ key }}">
+            <button class="btn btn-secondary" type="submit" onclick="return confirm('This will keep your current plan active until the billing period ends. Your next renewal will switch to {{ tier.label }}. Continue?')">Downgrade Now</button>
+          </form>
+        {% elif stripe_enabled %}
+          <form method="post" action="{{ url_for('consumer.subscription_checkout') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="tier" value="{{ key }}">
+            <button class="btn btn-primary" type="submit">Upgrade Now</button>
+          </form>
+        {% else %}
+          <button class="btn btn-primary" disabled>Payment Unavailable</button>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+
+  {% if stripe_enabled %}
+    <div class="subscription-note">
+      <p><small>💳 Secure payment processing with Stripe. Cancel anytime.</small></p>
+    </div>
+  {% endif %}
+</section>
+
+<section class="consumer-faq-section">
+  <h2>Questions?</h2>
+  <ul>
+    <li><strong>Can I upgrade anytime?</strong> Yes, upgrade instantly and start enjoying more projects.</li>
+    <li><strong>What happens if I downgrade?</strong> You'll keep your data; inactive projects will be archived after 30 days.</li>
+    <li><strong>Is there a free trial?</strong> The Free plan is always available. No credit card required.</li>
+    <li><strong>Need help?</strong> <a href="mailto:support@askmarley.co.uk">Contact support</a> for billing or plan questions.</li>
+  </ul>
+</section>
+
+<div class="subscription-footer">
+  <a class="btn btn-light" href="{{ url_for('consumer.clipboard') }}">Back to Clipboard</a>
+</div>
 {% endblock %}

@@ -21,6 +21,7 @@
 
 <nav class="admin-tabs" aria-label="Admin sections">
   <a href="{{ url_for('admin.dashboard') }}" class="admin-tab{% if active_page == 'overview' %} is-active{% endif %}">Overview</a>
+  <a href="{{ url_for('admin.consumers_page') }}" class="admin-tab{% if active_page == 'consumers' %} is-active{% endif %}">Consumers</a>
   <a href="{{ url_for('admin.providers_page') }}" class="admin-tab{% if active_page == 'providers' %} is-active{% endif %}">Providers</a>
   <a href="{{ url_for('admin.moderation_page') }}" class="admin-tab{% if active_page == 'moderation' %} is-active{% endif %}">Moderation</a>
   <a href="{{ url_for('admin.taxonomy_page') }}" class="admin-tab{% if active_page == 'taxonomy' %} is-active{% endif %}">Taxonomy</a>

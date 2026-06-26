@@ -2,53 +2,95 @@
 {% block title %}AskMarley | Consumer Dashboard{% endblock %}
 {% block content %}
 <section class="portal-head">
+  <p class="portal-kicker">Consumer Workspace</p>
   <h1>Consumer Dashboard</h1>
-  <p>Your central workspace for projects, provider shortlists, and collaboration notes.</p>
+  <p>Your command center for matching, project progress, and provider collaboration.</p>
 </section>
 
-<section class="trust-strip">
-  <div class="stat-item">
-    <span class="stat-number">{{ stats.project_count }}</span>
-    <span class="stat-label">Active Projects</span>
+<section class="consumer-hero-panel">
+  <div class="consumer-hero-copy">
+    <p class="consumer-hero-greeting">Welcome back{% if current_user %}, {{ current_user.full_name }}{% endif %}.</p>
+    <h2>Continue moving your projects forward today.</h2>
+    <p class="consumer-hero-subtitle">
+      {% if stats.project_count > 0 %}
+        You have {{ stats.project_count }} active project{% if stats.project_count != 1 %}s{% endif %},
+        {{ stats.saved_provider_count }} saved provider{% if stats.saved_provider_count != 1 %}s{% endif %}, and
+        {{ stats.pinboard_count }} pinboard item{% if stats.pinboard_count != 1 %}s{% endif %}.
+      {% else %}
+        Start your first project to save providers, collect inspiration, and manage collaboration in one place.
+      {% endif %}
+    </p>
   </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-number">{{ stats.saved_provider_count }}</span>
-    <span class="stat-label">Saved Providers</span>
-  </div>
-  <div class="stat-divider"></div>
-  <div class="stat-item">
-    <span class="stat-number">{{ stats.pinboard_count }}</span>
-    <span class="stat-label">Pinboard Items</span>
+
+  <div class="consumer-hero-actions">
+    <a class="btn btn-primary" href="{{ url_for('consumer.clipboard') }}">
+      {% if stats.project_count > 0 %}Continue in Clipboard{% else %}Create First Project{% endif %}
+    </a>
+    <a class="btn btn-light" href="{{ url_for('consumer.chat') }}">Find Providers with Marley</a>
+    <a class="btn btn-light" href="{{ url_for('consumer.subscription') }}">Manage Plan</a>
   </div>
 </section>
 
-<section class="split">
-  <article>
-    <div class="tier-box">
-      <h3>Plan: {{ consumer_sub.plan.label }}</h3>
-      <p><strong>Selected Tier:</strong> {{ consumer_sub.selected_tier|title }} | <strong>Billing:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
-      <p>{{ consumer_sub.plan.price }} | Max Projects: {{ consumer_sub.plan.max_projects if consumer_sub.plan.max_projects != 999 else 'Unlimited' }}</p>
-      <div class="hero-actions" style="margin-top: 1rem;">
-        <a class="btn btn-primary" href="{{ url_for('consumer.clipboard') }}">Open Clipboard</a>
-        <a class="btn btn-light" href="{{ url_for('consumer.chat') }}">Open Chat</a>
+<section class="consumer-stat-grid">
+  <a class="consumer-stat-card" href="{{ url_for('consumer.clipboard') }}">
+    <span class="consumer-stat-number">{{ stats.project_count }}</span>
+    <span class="consumer-stat-label">Active Projects</span>
+    <small>Open your boards and next steps</small>
+  </a>
+  <a class="consumer-stat-card" href="{{ url_for('consumer.clipboard') }}">
+    <span class="consumer-stat-number">{{ stats.saved_provider_count }}</span>
+    <span class="consumer-stat-label">Saved Providers</span>
+    <small>Review shortlist and message providers</small>
+  </a>
+  <a class="consumer-stat-card" href="{{ url_for('consumer.clipboard') }}">
+    <span class="consumer-stat-number">{{ stats.pinboard_count }}</span>
+    <span class="consumer-stat-label">Pinboard Items</span>
+    <small>Open gallery and review your media</small>
+  </a>
+</section>
+
+<section class="consumer-dashboard-layout">
+  <article class="consumer-projects-panel">
+    <header class="consumer-panel-head">
+      <div>
+        <p class="consumer-panel-kicker">Active Work</p>
+        <h2>Recent Projects</h2>
       </div>
-    </div>
+      <a class="btn btn-light" href="{{ url_for('consumer.clipboard') }}">View All in Clipboard</a>
+    </header>
 
-    <h2>Recent Projects</h2>
-    <div class="grid-cards">
+    <div class="consumer-project-grid">
       {% if recent_projects %}
         {% for project in recent_projects %}
-          <article class="card">
-            <h3>{{ project.name }}</h3>
-            <p>Status: {{ project.status }}</p>
-            <p><strong>Saved Providers:</strong> {{ project.saved_providers|length }}</p>
-            <p><strong>Pins:</strong> {{ project.pinboard_items|length }}</p>
-            <a class="btn btn-light" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>
+          <article class="consumer-project-card">
+            <div class="consumer-project-top">
+              <h3>{{ project.name }}</h3>
+              <span class="consumer-status-pill">{{ project.status }}</span>
+            </div>
+
+            <p class="consumer-project-meta">
+              <span><strong>Saved Providers:</strong> {{ project.saved_providers|length }}</span>
+              <span><strong>Pins:</strong> {{ project.pinboard_items|length }}</span>
+            </p>
+
+            <p class="consumer-project-next-step">
+              {% if project.saved_providers|length == 0 %}
+                Next step: Add providers to this project shortlist.
+              {% elif project.pinboard_items|length == 0 %}
+                Next step: Add pinboard inspiration to align scope and quotes.
+              {% else %}
+                Next step: Resume project chat and move toward confirmed quotes.
+              {% endif %}
+            </p>
+
+            <div class="consumer-project-actions">
+              <a class="btn btn-primary" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Resume Project</a>
+              <a class="btn btn-light" href="{{ url_for('consumer.clipboard') }}">Open Board</a>
+            </div>
           </article>
         {% endfor %}
       {% else %}
-        <article class="card">
+        <article class="consumer-empty-state">
           <h3>No projects yet</h3>
           <p>Create your first project to start saving providers and collaboration notes.</p>
           <a class="btn btn-primary" href="{{ url_for('consumer.clipboard') }}">Create First Project</a>
@@ -57,22 +99,33 @@
     </div>
   </article>
 
-  <aside class="chat-sidepanel">
-    <h3>Quick Actions</h3>
-    <ul class="provider-list">
+  <aside class="consumer-workflows-panel">
+    <header class="consumer-panel-head compact">
+      <div>
+        <p class="consumer-panel-kicker">Guided Workflows</p>
+        <h3>Quick Actions</h3>
+      </div>
+    </header>
+
+    <ul class="consumer-workflow-list">
       <li>
-        <strong>Start Matching</strong>
-        <p>Use Marley chat to discover local providers by task and postcode.</p>
-        <a href="{{ url_for('consumer.chat') }}">Go to Consumer Chat</a>
+        <strong>Find Providers in 2 Minutes</strong>
+        <p>Describe your need and postcode, then shortlist the strongest local matches.</p>
+        <a href="{{ url_for('consumer.chat') }}">Start Matching</a>
       </li>
       <li>
-        <strong>Manual Lookup</strong>
-        <p>Search service categories and branches directly.</p>
+        <strong>Review and Organize Boards</strong>
+        <p>Add providers, pin media, and keep project information in one place.</p>
+        <a href="{{ url_for('consumer.clipboard') }}">Open Clipboard</a>
+      </li>
+      <li>
+        <strong>Explore Service Categories</strong>
+        <p>Use manual lookup when you know exactly what branch you need.</p>
         <a href="{{ url_for('consumer.search') }}">Open Manual Search</a>
       </li>
       <li>
-        <strong>Manage Plan</strong>
-        <p>Upgrade your subscription to unlock more project actions.</p>
+        <strong>Plan and Subscription</strong>
+        <p>Adjust your tier to unlock more active projects and collaboration options.</p>
         <a href="{{ url_for('consumer.subscription') }}">Manage Subscription</a>
       </li>
     </ul>

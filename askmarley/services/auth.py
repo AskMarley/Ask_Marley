@@ -52,7 +52,29 @@ def ensure_default_users():
 
 
 def get_current_user():
-    return session.get("auth_user")
+    auth_user = session.get("auth_user")
+    user_id = session.get("auth_user_id")
+    if not auth_user or not user_id:
+        return auth_user
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return auth_user
+
+    if user.account_disabled:
+        session.pop("auth_user_id", None)
+        session.pop("auth_user", None)
+        session.modified = True
+        return None
+
+    refreshed = {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+    }
+    session["auth_user"] = refreshed
+    return refreshed
 
 
 def is_authenticated():
@@ -137,6 +159,9 @@ def authenticate_user(email, password):
         return None
 
     if not check_password_hash(user.password_hash, password):
+        return None
+
+    if user.account_disabled:
         return None
 
     return user

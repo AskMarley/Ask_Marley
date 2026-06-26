@@ -10,6 +10,8 @@
     <ul class="admin-list">
       {% if audit_trail %}
         {% for event in audit_trail %}
+          {% set before_state = event.before if event.before is mapping else {} %}
+          {% set after_state = event.after if event.after is mapping else {} %}
           <li>
             <div class="row-head">
               <strong>{{ event.action }}</strong>
@@ -17,8 +19,40 @@
             </div>
             <p>{{ event.provider_name }} | Actor: {{ event.actor }}</p>
             <small>Reason: {{ event.reason }}</small>
-            <p><small>Before: {{ event.before }}</small></p>
-            <p><small>After: {{ event.after }}</small></p>
+
+            <div class="audit-state-columns">
+              <article class="audit-state-card">
+                <h4>Before</h4>
+                {% if before_state %}
+                  <ul>
+                    {% for key, value in before_state.items() %}
+                      <li class="{% if after_state.get(key) != value %}is-changed{% endif %}">
+                        <span>{{ key|replace('_', ' ')|title }}</span>
+                        <strong>{{ value }}</strong>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="muted">No prior state captured.</p>
+                {% endif %}
+              </article>
+
+              <article class="audit-state-card">
+                <h4>After</h4>
+                {% if after_state %}
+                  <ul>
+                    {% for key, value in after_state.items() %}
+                      <li class="{% if before_state.get(key) != value %}is-changed{% endif %}">
+                        <span>{{ key|replace('_', ' ')|title }}</span>
+                        <strong>{{ value }}</strong>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="muted">No resulting state captured.</p>
+                {% endif %}
+              </article>
+            </div>
           </li>
         {% endfor %}
       {% else %}

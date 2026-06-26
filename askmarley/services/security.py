@@ -22,6 +22,10 @@ def validate_csrf():
     if request.method in SAFE_METHODS:
         return
 
+    # External payment webhooks cannot provide session-bound CSRF tokens.
+    if request.endpoint == "main.stripe_webhook":
+        return
+
     session_token = session.get("csrf_token")
     request_token = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
     if not session_token or not request_token or session_token != request_token:
@@ -67,7 +71,7 @@ def security_headers(response):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; "
-        "script-src 'self';"
+        "script-src 'self' 'unsafe-inline';"
     )
     return response
 

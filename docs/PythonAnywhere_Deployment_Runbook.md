@@ -53,7 +53,28 @@ flask seed
 - GET /admin/dashboard
 - GET /health
 
+Automated option:
+
+```bash
+python scripts/smoke_routes.py --base-url http://127.0.0.1:5000 --auth-demo-targets provider admin
+```
+
+Notes:
+- Route checks now fail when a path redirects to an unexpected destination (for example, a login page).
+- `--auth-demo-targets provider admin` verifies provider/admin dashboards as authenticated pages using demo accounts.
+
 ## 8. Rollback
 - Revert to previous git tag/commit.
 - Run `flask db downgrade` only if migration requires rollback.
 - Reload web app.
+
+## 9. Local Backup Step (Before Risky Changes)
+
+```bash
+python scripts/backup_sqlite.py
+```
+
+## 10. Related Operational Documents
+- `docs/Deployment_Staging_Checklist.md`
+- `docs/Incident_Response_Playbook.md`
+- `docs/Launch_Handover_Checklist.md`

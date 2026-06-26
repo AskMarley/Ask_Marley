@@ -7,12 +7,40 @@
       <p>Track and resolve reports with quick status transitions.</p>
     </header>
 
+    <div class="admin-toolbar moderation-toolbar">
+      <input type="search" id="moderationSearch" placeholder="Search case, reason, participants">
+      <select id="moderationSeverityFilter">
+        <option value="all">All severities</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <select id="moderationStatusFilter">
+        <option value="all">All statuses</option>
+        {% for state in moderation_statuses %}
+          <option value="{{ state }}">{{ state|title }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-light" id="moderationCompactToggle" aria-pressed="false">Compact View</button>
+      <span class="result-meta" id="moderationFilterCount">Showing {{ flagged_chats|length }} cases</span>
+    </div>
+
     <ul class="admin-list">
       {% for flag in flagged_chats %}
-        <li>
+        <li
+          class="js-case-row"
+          data-case-id="{{ flag.case_id|lower }}"
+          data-reason="{{ flag.reason|lower }}"
+          data-participants="{{ flag.participants|lower }}"
+          data-severity="{{ flag.severity|lower }}"
+          data-status="{{ flag.status|default('open')|lower }}"
+        >
           <div class="row-head">
             <strong>{{ flag.case_id }}</strong>
-            <span class="status-pill">{{ flag.severity|title }}</span>
+            <div class="moderation-pill-group">
+              <span class="status-pill severity-{{ flag.severity|lower }}">{{ flag.severity|title }}</span>
+              <span class="status-pill status-{{ flag.status|default('open')|lower }}">{{ flag.status|default('open')|title }}</span>
+            </div>
           </div>
           <p>{{ flag.reason }}</p>
           <small>{{ flag.participants }} | Source: {{ flag.source|default('system')|replace('-', ' ')|title }}</small>
@@ -29,9 +57,157 @@
             </select>
             <button class="btn btn-light" type="submit">Update Status</button>
           </form>
+
+          <div class="quick-state-actions">
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="moderation-status">
+              <input type="hidden" name="case_id" value="{{ flag.case_id }}">
+              <input type="hidden" name="new_status" value="reviewing">
+              <button class="btn btn-light" type="submit">Move to Reviewing</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="moderation-status">
+              <input type="hidden" name="case_id" value="{{ flag.case_id }}">
+              <input type="hidden" name="new_status" value="resolved">
+              <button class="btn btn-primary" type="submit">Mark Resolved</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="return_to" value="{{ request.path }}">
+              <input type="hidden" name="action" value="moderation-status">
+              <input type="hidden" name="case_id" value="{{ flag.case_id }}">
+              <input type="hidden" name="new_status" value="dismissed">
+              <button class="btn btn-danger" type="submit">Dismiss Case</button>
+            </form>
+          </div>
         </li>
       {% endfor %}
     </ul>
   </article>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const FEEDBACK_KEY = "admin.moderation.lastAction";
+    const COMPACT_KEY = "admin.moderation.compact";
+
+    const rows = Array.from(document.querySelectorAll(".js-case-row"));
+    const search = document.getElementById("moderationSearch");
+    const severity = document.getElementById("moderationSeverityFilter");
+    const status = document.getElementById("moderationStatusFilter");
+    const countLabel = document.getElementById("moderationFilterCount");
+    const compactToggle = document.getElementById("moderationCompactToggle");
+
+    const statusLabel = {
+      reviewing: "Case moved to Reviewing",
+      resolved: "Case marked Resolved",
+      dismissed: "Case dismissed",
+      open: "Case reopened",
+    };
+
+    const showInlineFeedback = (row, message) => {
+      if (!row || !message) return;
+      const existing = row.querySelector(".inline-feedback");
+      if (existing) {
+        existing.remove();
+      }
+      const feedback = document.createElement("p");
+      feedback.className = "inline-feedback";
+      feedback.textContent = message;
+      row.appendChild(feedback);
+      row.classList.add("row-recent-updated");
+    };
+
+    const applyFilter = () => {
+      const searchValue = (search?.value || "").trim().toLowerCase();
+      const severityValue = severity?.value || "all";
+      const statusValue = status?.value || "all";
+
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const haystack = [
+          row.dataset.caseId,
+          row.dataset.reason,
+          row.dataset.participants,
+        ].join(" ");
+        const searchMatch = !searchValue || haystack.includes(searchValue);
+        const severityMatch = severityValue === "all" || row.dataset.severity === severityValue;
+        const statusMatch = statusValue === "all" || row.dataset.status === statusValue;
+        const show = searchMatch && severityMatch && statusMatch;
+        row.classList.toggle("is-hidden", !show);
+        if (show) {
+          visibleCount += 1;
+        }
+      });
+
+      if (countLabel) {
+        countLabel.textContent = `Showing ${visibleCount} case${visibleCount === 1 ? "" : "s"}`;
+      }
+    };
+
+    const setCompactMode = (enabled) => {
+      document.body.classList.toggle("admin-compact-moderation", enabled);
+      if (compactToggle) {
+        compactToggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+        compactToggle.textContent = enabled ? "Comfort View" : "Compact View";
+      }
+      localStorage.setItem(COMPACT_KEY, enabled ? "1" : "0");
+    };
+
+    rows.forEach((row) => {
+      row.querySelectorAll("form").forEach((form) => {
+        form.addEventListener("submit", () => {
+          const caseId = form.querySelector('input[name="case_id"]')?.value;
+          const newStatus = form.querySelector('input[name="new_status"]')?.value || form.querySelector('select[name="new_status"]')?.value;
+          if (!caseId || !newStatus) {
+            return;
+          }
+
+          sessionStorage.setItem(
+            FEEDBACK_KEY,
+            JSON.stringify({
+              caseId: caseId.toLowerCase(),
+              newStatus,
+              createdAt: Date.now(),
+            }),
+          );
+        });
+      });
+    });
+
+    compactToggle?.addEventListener("click", () => {
+      const active = document.body.classList.contains("admin-compact-moderation");
+      setCompactMode(!active);
+    });
+
+    search?.addEventListener("input", applyFilter);
+    severity?.addEventListener("change", applyFilter);
+    status?.addEventListener("change", applyFilter);
+
+    const compactSaved = localStorage.getItem(COMPACT_KEY) === "1";
+    setCompactMode(compactSaved);
+
+    const pendingFeedback = sessionStorage.getItem(FEEDBACK_KEY);
+    if (pendingFeedback) {
+      try {
+        const payload = JSON.parse(pendingFeedback);
+        if (payload?.createdAt && Date.now() - payload.createdAt < 120000) {
+          const target = rows.find((row) => row.dataset.caseId === payload.caseId);
+          showInlineFeedback(target, statusLabel[payload.newStatus] || "Case status updated");
+        }
+      } catch (error) {
+        // ignore malformed payload
+      }
+      sessionStorage.removeItem(FEEDBACK_KEY);
+    }
+
+    applyFilter();
+  });
+</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
+from askmarley.models import User
 from askmarley.services.auth import (
     authenticate_user,
     get_current_user,
@@ -90,6 +91,10 @@ def login():
 
         user = authenticate_user(email, password)
         if not user:
+            existing_user = User.query.filter_by(email=email.strip().lower()).first()
+            if existing_user and existing_user.account_disabled:
+                flash("This account has been disabled. Contact support for help.", "error")
+                return redirect(url_for("auth.login"))
             flash("Invalid credentials.", "error")
             return redirect(url_for("auth.login"))
 

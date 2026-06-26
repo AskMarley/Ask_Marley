@@ -2,41 +2,111 @@
 {% block title %}AskMarley | Provider Dashboard{% endblock %}
 {% block content %}
 <section class="portal-head">
-  <h1>Provider Portal</h1>
-  <p>Track local leads, respond in chat, and manage your listing performance.</p>
+  <p class="portal-kicker">Provider Portal</p>
+  <h1>Provider Dashboard</h1>
+  <p>Track onboarding progress, move leads through your pipeline, and jump into live conversations.</p>
 </section>
 
-<section class="split">
-  <article>
-    <div class="tier-box provider-tier">
-      <h3>{{ provider_profile.name }}</h3>
-      <p>Subscription Tier: <span class="badge badge-gold">{{ provider_profile.tier|title }}</span></p>
-      <p><strong>Selected Tier:</strong> {{ provider_profile.selected_tier|title }} | <strong>Billing:</strong> {{ provider_profile.billing_status|replace('_', ' ')|title }}</p>
-      <p><strong>Travel Postcodes:</strong> {{ provider_profile.travel_postcodes|join(', ') }}</p>
-      <p><strong>Service Mapping:</strong></p>
-      <ul>
-        {% for service in provider_profile.services %}
-          <li>{{ service }}</li>
-        {% endfor %}
-      </ul>
-      <a class="btn btn-light" href="{{ url_for('provider.subscription') }}">Manage Subscription</a>
+<section class="provider-hero-grid">
+  <article class="provider-hero-card">
+    <h2>{{ provider_profile.name }}</h2>
+    <p class="provider-hero-status">Subscription: <strong>{{ provider_profile.tier|title }}</strong> | Billing: <strong>{{ provider_profile.billing_status|replace('_', ' ')|title }}</strong></p>
+    <div class="provider-hero-meta">
+      <div>
+        <span>Services</span>
+        <strong>{{ provider_profile.services|join(', ') }}</strong>
+      </div>
+      <div>
+        <span>Coverage</span>
+        <strong>{{ provider_profile.travel_postcodes|join(', ') }}</strong>
+      </div>
     </div>
-
-    <h2>Incoming Leads</h2>
-    <div class="grid-cards">
-      {% for lead in leads %}
-        <article class="card">
-          <h3>{{ lead.project }}</h3>
-          <p>Postcode: {{ lead.postcode }}</p>
-          <p>Urgency: {{ lead.urgency|title }}</p>
-          <button class="btn btn-primary">Open Chat</button>
-        </article>
-      {% endfor %}
+    <div class="provider-hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('provider.onboarding') }}">Review Onboarding</a>
+      <a class="btn btn-light" href="{{ url_for('provider.subscription') }}">Manage Subscription</a>
     </div>
   </article>
 
-  <aside class="chat-sidepanel">
-    <h3>Active Conversations</h3>
+  <aside class="provider-onboarding-preview">
+    <h3>Onboarding Progress</h3>
+    <p>{% if onboarding_complete %}Your provider profile is ready to receive leads.{% else %}Finish the missing items below to improve lead quality and trust.{% endif %}</p>
+    <ul class="provider-checklist">
+      {% for step in onboarding_steps %}
+        <li class="{% if step.complete %}is-complete{% endif %}">
+          <strong>{{ step.label }}</strong>
+          <span>{{ step.detail }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+</section>
+
+<section class="provider-dashboard-layout">
+  <article class="provider-leads-panel">
+    <div class="provider-panel-head">
+      <div>
+        <p class="portal-kicker">Lead Workflow</p>
+        <h2>Incoming Leads</h2>
+      </div>
+      <span class="provider-count">{{ leads|length }} leads</span>
+    </div>
+
+    <div class="provider-lead-grid">
+      {% if leads %}
+        {% for lead in leads %}
+          <article class="provider-lead-card">
+            <div class="provider-lead-top">
+              <div>
+                <h3>{{ lead.name }}</h3>
+                <p>{{ lead.customer }}</p>
+              </div>
+              <span class="provider-status-badge">{{ lead.status_label }}</span>
+            </div>
+
+            <p class="provider-lead-note">{{ lead.latest_note }}</p>
+
+            <div class="provider-lead-meta">
+              <span>{{ lead.saved_provider_count }} saved providers</span>
+              <span>{{ lead.pinboard_count }} pinboard items</span>
+              {% if lead.detected_service %}
+                <span>{{ lead.detected_service }}</span>
+              {% endif %}
+              {% if lead.lead_postcode %}
+                <span>{{ lead.lead_postcode }}</span>
+              {% endif %}
+            </div>
+
+            <p class="provider-lead-match">{{ lead.match_reason }}</p>
+
+            <div class="provider-lead-actions">
+              <a class="btn btn-light" href="{{ lead.chat_url }}">Open Chat</a>
+              {% for action_value, action_label in lead.actions %}
+                <form method="post" action="{{ url_for('provider.update_lead_status', project_id=lead.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="status" value="{{ action_value }}">
+                  <button class="btn {% if action_value == 'archived' %}btn-secondary{% else %}btn-primary{% endif %}" type="submit">{{ action_label }}</button>
+                </form>
+              {% endfor %}
+            </div>
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="provider-empty-state">
+          <h3>No matched leads yet</h3>
+          <p>AskMarley will show projects that match your service categories and travel postcodes here once consumers submit enough detail.</p>
+          <a class="btn btn-light" href="{{ url_for('provider.onboarding') }}">Review Onboarding</a>
+        </article>
+      {% endif %}
+    </div>
+  </article>
+
+  <aside class="provider-conversations-panel">
+    <div class="provider-panel-head">
+      <div>
+        <p class="portal-kicker">Conversations</p>
+        <h2>Active Threads</h2>
+      </div>
+    </div>
     <ul class="provider-list">
       {% for chat in chats %}
         <li>

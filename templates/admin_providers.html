@@ -7,16 +7,71 @@
       <p>Approve, suspend, reactivate, and manage tier overrides.</p>
     </header>
 
-    <div class="provider-card-grid">
+    <div class="admin-toolbar provider-toolbar">
+      <input type="search" id="providerSearch" placeholder="Search provider, service, postcode">
+      <select id="providerStatusFilter">
+        <option value="all">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="verified">Verified</option>
+        <option value="suspended">Suspended</option>
+      </select>
+      <select id="providerTierFilter">
+        <option value="all">All tiers</option>
+        <option value="basic">Basic</option>
+        <option value="plus">Plus</option>
+        <option value="premium">Premium</option>
+      </select>
+      <button type="button" class="btn btn-light" id="providerCompactToggle" aria-pressed="false">Compact View</button>
+      <span class="result-meta" id="providerFilterCount">Showing {{ provider_signups|length }} providers</span>
+    </div>
+
+    <form method="post" class="admin-form bulk-provider-form" id="bulkProviderActionForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="return_to" value="{{ request.path }}">
+      <select name="action" id="bulkProviderAction" required>
+        <option value="">Bulk action</option>
+        <option value="verify-provider-bulk">Verify Selected</option>
+        <option value="suspend-provider-bulk">Suspend Selected</option>
+        <option value="reactivate-provider-bulk">Reactivate Selected</option>
+        <option value="override-tier-bulk">Set Tier on Selected</option>
+      </select>
+      <select name="new_tier" id="bulkProviderTier">
+        <option value="basic">Basic</option>
+        <option value="plus">Plus</option>
+        <option value="premium">Premium</option>
+      </select>
+      <input type="text" name="reason" placeholder="Reason for bulk action" required>
+      <button class="btn btn-primary" type="submit">Apply to Selected</button>
+    </form>
+
+    <div class="provider-card-grid admin-provider-grid">
       {% for provider in provider_signups %}
-        <article class="provider-card">
+        <article
+          class="provider-card js-provider-card"
+          data-name="{{ provider.name|lower }}"
+          data-service="{{ provider.service_path|lower }}"
+          data-postcodes="{{ provider.postcodes|lower }}"
+          data-status="{{ provider.status|lower }}"
+          data-tier="{{ provider.tier|lower }}"
+        >
+          <label class="provider-select">
+            <input
+              type="checkbox"
+              name="provider_names"
+              value="{{ provider.name }}"
+              form="bulkProviderActionForm"
+            >
+            <span>Select</span>
+          </label>
           <h3>{{ provider.name }}</h3>
           <p>{{ provider.service_path }}</p>
           <p>Postcodes: {{ provider.postcodes }}</p>
-          <p>
-            <span class="status-pill">{{ provider.status|title }}</span>
-            <span class="status-pill">{{ provider.tier|title }}</span>
-            <span class="status-pill">Verified: {{ 'Yes' if provider.verified else 'No' }}</span>
+          <p class="provider-meta-pills">
+            <span class="status-pill status-{{ provider.status|lower }}">{{ provider.status|title }}</span>
+            <span class="status-pill tier-{{ provider.tier|lower }}">{{ provider.tier|title }}</span>
+            <span class="status-pill verified-{% if provider.verified %}yes{% else %}no{% endif %}">
+              Verified: {{ 'Yes' if provider.verified else 'No' }}
+            </span>
           </p>
 
           <div class="inline-actions compact">
@@ -89,4 +144,136 @@
     </ul>
   </aside>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const FEEDBACK_KEY = "admin.providers.lastAction";
+    const COMPACT_KEY = "admin.providers.compact";
+
+    const cards = Array.from(document.querySelectorAll(".js-provider-card"));
+    const search = document.getElementById("providerSearch");
+    const statusFilter = document.getElementById("providerStatusFilter");
+    const tierFilter = document.getElementById("providerTierFilter");
+    const countLabel = document.getElementById("providerFilterCount");
+    const bulkAction = document.getElementById("bulkProviderAction");
+    const bulkTier = document.getElementById("bulkProviderTier");
+    const compactToggle = document.getElementById("providerCompactToggle");
+
+    const actionLabel = {
+      "verify-provider": "Provider verified",
+      "ban-provider": "Provider suspended",
+      "reactivate-provider": "Provider reactivated",
+      "override-tier": "Tier override applied",
+    };
+
+    const showInlineFeedback = (card, message) => {
+      if (!card || !message) return;
+      const existing = card.querySelector(".inline-feedback");
+      if (existing) {
+        existing.remove();
+      }
+      const feedback = document.createElement("p");
+      feedback.className = "inline-feedback";
+      feedback.textContent = message;
+      card.insertAdjacentElement("afterbegin", feedback);
+      card.classList.add("row-recent-updated");
+    };
+
+    const applyFilter = () => {
+      const searchValue = (search?.value || "").trim().toLowerCase();
+      const statusValue = statusFilter?.value || "all";
+      const tierValue = tierFilter?.value || "all";
+
+      let visibleCount = 0;
+      cards.forEach((card) => {
+        const haystack = [
+          card.dataset.name,
+          card.dataset.service,
+          card.dataset.postcodes,
+        ].join(" ");
+        const searchMatch = !searchValue || haystack.includes(searchValue);
+        const statusMatch = statusValue === "all" || card.dataset.status === statusValue;
+        const tierMatch = tierValue === "all" || card.dataset.tier === tierValue;
+        const show = searchMatch && statusMatch && tierMatch;
+        card.classList.toggle("is-hidden", !show);
+        if (show) {
+          visibleCount += 1;
+        }
+      });
+
+      if (countLabel) {
+        countLabel.textContent = `Showing ${visibleCount} provider${visibleCount === 1 ? "" : "s"}`;
+      }
+    };
+
+    const syncBulkTierVisibility = () => {
+      if (!bulkAction || !bulkTier) return;
+      const needsTier = bulkAction.value === "override-tier-bulk";
+      bulkTier.classList.toggle("is-hidden", !needsTier);
+      bulkTier.disabled = !needsTier;
+    };
+
+    const setCompactMode = (enabled) => {
+      document.body.classList.toggle("admin-compact-providers", enabled);
+      if (compactToggle) {
+        compactToggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+        compactToggle.textContent = enabled ? "Comfort View" : "Compact View";
+      }
+      localStorage.setItem(COMPACT_KEY, enabled ? "1" : "0");
+    };
+
+    cards.forEach((card) => {
+      card.querySelectorAll("form").forEach((form) => {
+        form.addEventListener("submit", () => {
+          const action = form.querySelector('input[name="action"]')?.value;
+          const providerName = form.querySelector('input[name="provider_name"]')?.value;
+          if (!action || !providerName || !actionLabel[action]) {
+            return;
+          }
+
+          sessionStorage.setItem(
+            FEEDBACK_KEY,
+            JSON.stringify({
+              name: providerName.toLowerCase(),
+              action,
+              createdAt: Date.now(),
+            }),
+          );
+        });
+      });
+    });
+
+    compactToggle?.addEventListener("click", () => {
+      const active = document.body.classList.contains("admin-compact-providers");
+      setCompactMode(!active);
+    });
+
+    search?.addEventListener("input", applyFilter);
+    statusFilter?.addEventListener("change", applyFilter);
+    tierFilter?.addEventListener("change", applyFilter);
+    bulkAction?.addEventListener("change", syncBulkTierVisibility);
+
+    const compactSaved = localStorage.getItem(COMPACT_KEY) === "1";
+    setCompactMode(compactSaved);
+
+    const pendingFeedback = sessionStorage.getItem(FEEDBACK_KEY);
+    if (pendingFeedback) {
+      try {
+        const payload = JSON.parse(pendingFeedback);
+        if (payload?.createdAt && Date.now() - payload.createdAt < 120000) {
+          const target = cards.find((card) => card.dataset.name === payload.name);
+          showInlineFeedback(target, actionLabel[payload.action] || "Update applied");
+        }
+      } catch (error) {
+        // ignore malformed payload
+      }
+      sessionStorage.removeItem(FEEDBACK_KEY);
+    }
+
+    syncBulkTierVisibility();
+    applyFilter();
+  });
+</script>
 {% endblock %}

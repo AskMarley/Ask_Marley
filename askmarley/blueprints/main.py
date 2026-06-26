@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, current_app, jsonify, request, render_template
+
+from askmarley.services.stripe_billing import process_webhook_event
 
 main_bp = Blueprint("main", __name__)
 
@@ -21,3 +23,21 @@ def terms_and_conditions():
 @main_bp.get("/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@main_bp.post("/webhooks/stripe")
+def stripe_webhook():
+    signature = request.headers.get("Stripe-Signature", "")
+    payload = request.data
+
+    try:
+        event_type = process_webhook_event(
+            payload=payload,
+            signature=signature,
+            secret_key=current_app.config.get("STRIPE_SECRET_KEY", ""),
+            webhook_secret=current_app.config.get("STRIPE_WEBHOOK_SECRET", ""),
+        )
+    except Exception as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+
+    return jsonify({"status": "ok", "event": event_type}), 200

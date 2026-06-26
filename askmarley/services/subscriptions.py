@@ -1,4 +1,4 @@
-from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, PROVIDER_TIERS
+from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, CONSUMER_TIER_PRIORITY, PROVIDER_TIERS
 from askmarley.extensions import db
 from askmarley.models import Subscription, User
 
@@ -18,6 +18,7 @@ def _ensure_consumer_subscription(session):
         session["consumer_subscription"] = {
             "tier": "individual",
             "billing_status": "active",
+            "pending_tier": None,
         }
     return session["consumer_subscription"]
 
@@ -35,6 +36,29 @@ def get_effective_consumer_tier(tier, billing_status):
     if billing_status in {"past_due", "canceled"}:
         return "free"
     return tier if tier in CONSUMER_TIERS else "free"
+
+
+def _normalize_consumer_tier(tier):
+    return tier if tier in CONSUMER_TIERS else "free"
+
+
+def _consumer_tier_rank(tier):
+    return CONSUMER_TIER_PRIORITY.get(_normalize_consumer_tier(tier), 0)
+
+
+def _serialize_consumer_subscription(*, selected_tier, billing_status, pending_tier=None):
+    effective_tier = get_effective_consumer_tier(selected_tier, billing_status)
+    normalized_pending_tier = _normalize_consumer_tier(pending_tier) if pending_tier else None
+    data = {
+        "selected_tier": selected_tier,
+        "billing_status": billing_status,
+        "effective_tier": effective_tier,
+        "pending_tier": normalized_pending_tier,
+        "plan": CONSUMER_TIERS[effective_tier],
+    }
+    if normalized_pending_tier:
+        data["pending_plan"] = CONSUMER_TIERS[normalized_pending_tier]
+    return data
 
 
 def get_consumer_subscription(session):
@@ -55,31 +79,28 @@ def get_consumer_subscription(session):
             db.session.add(sub)
             db.session.commit()
 
-        selected_tier = sub.plan_code if sub.plan_code in CONSUMER_TIERS else "free"
+        selected_tier = _normalize_consumer_tier(sub.plan_code)
         billing_status = sub.status if sub.status in BILLING_STATUSES else "active"
-        effective_tier = get_effective_consumer_tier(selected_tier, billing_status)
-        return {
-            "selected_tier": selected_tier,
-            "billing_status": billing_status,
-            "effective_tier": effective_tier,
-            "plan": CONSUMER_TIERS[effective_tier],
-        }
+        pending_tier = sub.pending_plan_code if sub.pending_plan_code in CONSUMER_TIERS else None
+        return _serialize_consumer_subscription(
+            selected_tier=selected_tier,
+            billing_status=billing_status,
+            pending_tier=pending_tier,
+        )
 
     sub = _ensure_consumer_subscription(session)
-    effective_tier = get_effective_consumer_tier(sub["tier"], sub["billing_status"])
-    return {
-        "selected_tier": sub["tier"],
-        "billing_status": sub["billing_status"],
-        "effective_tier": effective_tier,
-        "plan": CONSUMER_TIERS[effective_tier],
-    }
+    return _serialize_consumer_subscription(
+        selected_tier=_normalize_consumer_tier(sub["tier"]),
+        billing_status=sub["billing_status"],
+        pending_tier=sub.get("pending_tier"),
+    )
 
 
-def update_consumer_subscription(session, tier, billing_status):
-    if tier not in CONSUMER_TIERS:
-        tier = "free"
+def update_consumer_subscription(session, tier, billing_status, pending_tier=None):
+    tier = _normalize_consumer_tier(tier)
     if billing_status not in BILLING_STATUSES:
         billing_status = "active"
+    pending_tier = _normalize_consumer_tier(pending_tier) if pending_tier else None
 
     user = _get_persistent_user(session, "consumer")
     if user:
@@ -89,19 +110,27 @@ def update_consumer_subscription(session, tier, billing_status):
             .first()
         )
         if not sub:
-            sub = Subscription(user_id=user.id, plan_code=tier, status=billing_status)
+            sub = Subscription(
+                user_id=user.id,
+                plan_code=tier,
+                pending_plan_code=pending_tier,
+                status=billing_status,
+            )
             db.session.add(sub)
         else:
             sub.plan_code = tier
+            sub.pending_plan_code = pending_tier
             sub.status = billing_status
         db.session.commit()
-        user.consumer_tier = tier
+        if not pending_tier:
+            user.consumer_tier = tier
         db.session.commit()
         return
 
     session["consumer_subscription"] = {
         "tier": tier,
         "billing_status": billing_status,
+        "pending_tier": pending_tier,
     }
     session.modified = True
 

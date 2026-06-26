@@ -12,7 +12,7 @@
       <div class="hero-text-block">
         <div class="hero-badge-row">
           <div class="brand-badge">
-            <img class="brand-badge-img" src="{{ url_for('static', filename='Marley_s Choice Badge.jpeg') }}" alt="AskMarley badge">
+            <img class="brand-badge-img" src="{{ url_for('static', filename='marley.jpeg') }}" alt="AskMarley badge">
           </div>
           <div class="network-status">
             <span class="status-ping"></span>
@@ -20,8 +20,22 @@
           </div>
         </div>
 
-        <h1 class="hero-headline">Find trusted local help by chatting with <span class="accent-gradient">Marley</span></h1>
+        <h1 class="hero-headline">Need a <span class="carousel-word" id="headlineCarouselWord">plumber</span>? ask <span class="marley-block">Marley</span>.</h1>
         <p class="hero-paragraph">Skip tedious directories and endless contact forms. AskMarley is a conversational hub that matches you with certified local trade professionals in under 90 seconds using postcode intelligence.</p>
+
+        <div class="hero-interact-panel">
+          <label class="hero-interact-label" for="heroQuickInput">What do you need right now?</label>
+          <div class="hero-interact-row">
+            <input id="heroQuickInput" type="text" placeholder="Emergency plumber in SW1A" autocomplete="off">
+            <a class="marley-btn marley-btn-primary hero-quick-go" id="heroQuickGo" href="{{ url_for('consumer.chat') }}">Ask Marley</a>
+          </div>
+          <div class="hero-quick-chips" role="list" aria-label="Quick prompts">
+            <button class="quick-chip" type="button" data-service="plumber" data-prompt="Emergency plumber tonight in SW1A">Emergency plumber</button>
+            <button class="quick-chip" type="button" data-service="cleaner" data-prompt="Weekly cleaner for a two-bed flat in SE1">Weekly cleaner</button>
+            <button class="quick-chip" type="button" data-service="electrician" data-prompt="Need a certified electrician for fuse issues in M4">Certified electrician</button>
+            <button class="quick-chip" type="button" data-service="gardener" data-prompt="Garden tidy up and hedge trim near BS1">Garden tidy up</button>
+          </div>
+        </div>
         
         <div class="hero-buttons">
           <a class="marley-btn marley-btn-primary" href="{{ url_for('consumer.chat') }}">
@@ -77,10 +91,67 @@
     </div>
   </section>
 
+  <section class="urgent-strip">
+    <p class="urgent-copy"><strong>Need help in the next 2 hours?</strong> Fast-track your request and see available providers now.</p>
+    <a class="marley-btn marley-btn-primary urgent-cta" href="{{ url_for('consumer.chat') }}">Start Urgent Match</a>
+  </section>
+
   <!-- ==========================================================================
-       SECTION 1.5: USE CASE CAROUSEL
+       SECTION 1.5: INTERACTIVE SERVICE BOARD
        ========================================================================== -->
-  <section class="carousel-section">
+  <section class="service-quick-section">
+    <div class="service-quick-header">
+      <span class="eyebrow-accent">Popular Right Now</span>
+      <h2 class="section-title">Tap a Service and Launch Instantly</h2>
+    </div>
+    <div class="service-quick-grid" role="list" aria-label="Popular services">
+      <button class="service-tile-btn is-active" type="button" data-service="plumber" data-prompt="Emergency plumber near me" data-latency="3 min" data-price="GBP65 to GBP120" data-availability="18 available now">
+        <span class="tile-title">Emergency Plumber</span>
+        <span class="tile-meta">18 available now</span>
+      </button>
+      <button class="service-tile-btn" type="button" data-service="electrician" data-prompt="Certified electrician for rewiring" data-latency="6 min" data-price="GBP80 to GBP160" data-availability="12 available now">
+        <span class="tile-title">Electrician</span>
+        <span class="tile-meta">12 available now</span>
+      </button>
+      <button class="service-tile-btn" type="button" data-service="cleaner" data-prompt="Weekly domestic cleaner" data-latency="8 min" data-price="GBP22 to GBP35 per hour" data-availability="24 available now">
+        <span class="tile-title">Domestic Cleaner</span>
+        <span class="tile-meta">24 available now</span>
+      </button>
+      <button class="service-tile-btn" type="button" data-service="gardener" data-prompt="Garden tidy and hedge trim" data-latency="9 min" data-price="GBP40 to GBP90" data-availability="15 available now">
+        <span class="tile-title">Gardener</span>
+        <span class="tile-meta">15 available now</span>
+      </button>
+      <button class="service-tile-btn" type="button" data-service="dog walker" data-prompt="Daily dog walker in my area" data-latency="11 min" data-price="GBP15 to GBP28 per walk" data-availability="9 available now">
+        <span class="tile-title">Dog Walker</span>
+        <span class="tile-meta">9 available now</span>
+      </button>
+      <button class="service-tile-btn" type="button" data-service="wedding planner" data-prompt="Wedding planner for 2027" data-latency="14 min" data-price="GBP900 to GBP2,500" data-availability="6 available now">
+        <span class="tile-title">Wedding Planner</span>
+        <span class="tile-meta">6 available now</span>
+      </button>
+    </div>
+    <div class="service-pulse-panels">
+      <article class="pulse-card">
+        <h4>Availability Pulse</h4>
+        <p id="availabilityPulseText">18 available now</p>
+      </article>
+      <article class="pulse-card">
+        <h4>Typical Price Pulse</h4>
+        <p id="pricePulseText">GBP65 to GBP120</p>
+      </article>
+      <article class="pulse-card">
+        <h4>Average First Reply</h4>
+        <p id="latencyPulseText">3 min</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="live-proof-strip" aria-live="polite">
+    <span class="proof-dot"></span>
+    <p id="liveProofText">23 requests matched in London in the last hour.</p>
+  </section>
+
+  <section class="carousel-section" style="display: none;">
     <div class="carousel-container">
       <div class="carousel-track" id="carouselTrack">
         <div class="carousel-slide active">
@@ -88,33 +159,9 @@
           <p>Ask Marley — get matched in 90 seconds</p>
           <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
         </div>
-        <div class="carousel-slide">
-          <h2>Looking for a <span class="highlight-red">stylist?</span></h2>
-          <p>Ask Marley — find your perfect match</p>
-          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
-        </div>
-        <div class="carousel-slide">
-          <h2>Need <span class="highlight-red">wedding planning?</span></h2>
-          <p>Ask Marley — expert professionals ready</p>
-          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
-        </div>
-        <div class="carousel-slide">
-          <h2>Looking for a <span class="highlight-red">gardener?</span></h2>
-          <p>Ask Marley — local experts waiting</p>
-          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
-        </div>
-        <div class="carousel-slide">
-          <h2>Need an <span class="highlight-red">electrician?</span></h2>
-          <p>Ask Marley — instant local connections</p>
-          <a href="{{ url_for('consumer.chat') }}" class="carousel-cta">Start Now</a>
-        </div>
       </div>
       <div class="carousel-dots" id="carouselDots">
         <button class="carousel-dot active" data-slide="0" aria-label="Slide 1"></button>
-        <button class="carousel-dot" data-slide="1" aria-label="Slide 2"></button>
-        <button class="carousel-dot" data-slide="2" aria-label="Slide 3"></button>
-        <button class="carousel-dot" data-slide="3" aria-label="Slide 4"></button>
-        <button class="carousel-dot" data-slide="4" aria-label="Slide 5"></button>
       </div>
     </div>
   </section>
@@ -195,9 +242,13 @@
        SECTION 3: METRICS STRIP
        ========================================================================== -->
   <section class="trust-metrics-section">
+    <div class="metrics-live-header">
+      <span class="status-ping"></span>
+      <p>Live marketplace signal: <span id="metricsLiveText">New urgent request posted in Birmingham.</span></p>
+    </div>
     <div class="metrics-inner-strip">
       <div class="metric-item">
-        <h4 class="metric-val">14,200+</h4>
+        <h4 class="metric-val" id="metricMatchCount">14,200+</h4>
         <p class="metric-lbl">Vetted Providers Matched</p>
       </div>
       <span class="metric-divider"></span>
@@ -207,7 +258,7 @@
       </div>
       <span class="metric-divider"></span>
       <div class="metric-item">
-        <h4 class="metric-val">&lt; 90 Secs</h4>
+        <h4 class="metric-val" id="metricReplySpeed">&lt; 90 Secs</h4>
         <p class="metric-lbl">Avg. Connection Speed</p>
       </div>
     </div>
@@ -327,7 +378,9 @@
     <div class="pulse-ring pulse-1"></div>
     <div class="pulse-ring pulse-2"></div>
     <div class="floating-btn-inner">
-      <img src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley Icon">
+      <video autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+        <source src="{{ url_for('static', filename='animatedmarley.mp4') }}" type="video/mp4">
+      </video>
       <span class="active-dot"></span>
     </div>
   </a>
@@ -343,8 +396,8 @@
     --card-dark: #151B2C;
     --navy-blue: #1E293B;
     --soft-white: #F8FAFC;
-    --primary: #4F46E5; /* Royal Indigo */
-    --primary-light: #6366F1;
+    --primary: #2b396b;
+    --primary-light: #37467d;
     --accent-crimson: #EF4444; /* Vivid Crimson */
     --accent-crimson-dark: #DC2626;
     --slate-border: #E2E8F0;
@@ -393,7 +446,7 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    object-fit: cover;
+    object-fit: contain;
     background: #ffffff;
   }
 
@@ -441,10 +494,42 @@
     margin: 0 0 1.5rem 0;
   }
 
+  .carousel-word {
+    color: var(--accent-crimson);
+    display: inline-block;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+    margin: 0 0.05em;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .word-change-animate {
+    animation: wordSwap 0.3s ease;
+  }
+
+  @keyframes wordSwap {
+    0% {
+      opacity: 0.2;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .accent-gradient {
     background: linear-gradient(135deg, var(--primary) 0%, var(--accent-crimson) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  .marley-block {
+    color: var(--primary);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
   }
 
   .hero-paragraph {
@@ -458,6 +543,209 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1.25rem;
+  }
+
+  .hero-interact-panel {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin: 0 0 1.4rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .hero-interact-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--slate-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .hero-interact-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem;
+  }
+
+  .hero-interact-row input {
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+  }
+
+  .hero-interact-row input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+
+  .hero-quick-go {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+  }
+
+  .hero-quick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.7rem;
+  }
+
+  .quick-chip {
+    border: 1px solid #D6DEEA;
+    background: #F8FAFD;
+    color: var(--slate-text);
+    border-radius: 999px;
+    padding: 0.42rem 0.8rem;
+    font-size: 0.79rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .quick-chip:hover,
+  .quick-chip.is-active {
+    background: #EEF2FF;
+    border-color: #C7D2FE;
+    color: #312E81;
+    transform: translateY(-1px);
+  }
+
+  .urgent-strip {
+    margin: -1.6rem 0 2.6rem;
+    background: #111827;
+    color: #ffffff;
+    border: 1px solid #1F2937;
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .urgent-copy {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .urgent-cta {
+    white-space: nowrap;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+  }
+
+  .service-quick-section {
+    margin-bottom: 4rem;
+  }
+
+  .service-quick-header {
+    text-align: center;
+    margin-bottom: 1.2rem;
+  }
+
+  .service-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .service-tile-btn {
+    border: 1px solid #D9E2F0;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .service-tile-btn:hover {
+    transform: translateY(-2px);
+    border-color: #A5B4FC;
+    box-shadow: 0 10px 18px rgba(79, 70, 229, 0.1);
+  }
+
+  .service-tile-btn.is-active {
+    border-color: #6366F1;
+    background: #EEF2FF;
+    box-shadow: 0 12px 20px rgba(79, 70, 229, 0.14);
+  }
+
+  .tile-title {
+    font-size: 0.93rem;
+    font-weight: 800;
+    color: var(--bg-dark);
+  }
+
+  .tile-meta {
+    font-size: 0.78rem;
+    color: var(--slate-muted);
+    font-weight: 600;
+  }
+
+  .service-pulse-panels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .pulse-card {
+    border: 1px solid #D9E2F0;
+    background: #F9FBFF;
+    border-radius: 12px;
+    padding: 0.85rem;
+  }
+
+  .pulse-card h4 {
+    margin: 0;
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--slate-muted);
+  }
+
+  .pulse-card p {
+    margin: 0.35rem 0 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--bg-dark);
+  }
+
+  .live-proof-strip {
+    margin: 0 0 2.8rem;
+    border: 1px solid #D9E2F0;
+    border-radius: 999px;
+    background: #ffffff;
+    padding: 0.62rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .proof-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18);
+  }
+
+  .live-proof-strip p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--slate-text);
+    font-weight: 700;
   }
 
   /* Custom Clean Buttons */
@@ -881,6 +1169,24 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.02);
   }
 
+  .metrics-live-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    border: 1px solid #D9E2F0;
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    margin: 0 0 0.85rem;
+    background: #ffffff;
+  }
+
+  .metrics-live-header p {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--slate-text);
+  }
+
   .metric-item {
     text-align: center;
   }
@@ -1110,12 +1416,13 @@
      ========================================================================== */
   .marley-chat-anchor {
     position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    right: max(1rem, env(safe-area-inset-right));
     z-index: 9999;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    padding: 0.25rem;
   }
 
   /* Dynamic floating welcome balloon */
@@ -1221,8 +1528,8 @@
 
   /* Radar Pulse Floating Button */
   .marley-floating-btn {
-    width: 60px;
-    height: 60px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: var(--primary);
     display: flex;
@@ -1232,6 +1539,19 @@
     position: relative;
     box-shadow: 0 8px 30px rgba(79, 70, 229, 0.35);
     transition: transform 0.2s ease, background 0.2s ease;
+    overflow: visible;
+  }
+
+  @media (max-width: 768px) {
+    .marley-floating-btn {
+      width: 64px;
+      height: 64px;
+    }
+
+    .floating-btn-inner {
+      width: 54px;
+      height: 54px;
+    }
   }
 
   .marley-floating-btn:hover {
@@ -1240,18 +1560,21 @@
   }
 
   .floating-btn-inner {
-    width: 50px;
-    height: 50px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
     overflow: hidden;
     position: relative;
     border: 2px solid #ffffff;
+    background: #ffffff;
   }
 
-  .floating-btn-inner img {
+  .floating-btn-inner img,
+  .floating-btn-inner video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    display: block;
   }
 
   .active-dot {
@@ -1316,6 +1639,35 @@
 
     .hero-headline {
       font-size: 2.5rem;
+    }
+
+    .hero-interact-row {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-quick-go {
+      width: 100%;
+    }
+
+    .urgent-strip {
+      margin-top: -1rem;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .urgent-cta {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .service-quick-grid,
+    .service-pulse-panels {
+      grid-template-columns: 1fr;
+    }
+
+    .live-proof-strip {
+      width: 100%;
+      border-radius: 12px;
     }
 
     .bento-grid {
@@ -1446,8 +1798,121 @@
     playChatSequence();
 
     /* ------------------------------------------------------------------------
-       2. USE CASE CAROUSEL ROTATION
+       2. HEADLINE CAROUSEL WORD ROTATION & USE CASE CAROUSEL
        ------------------------------------------------------------------------ */
+    // Service words to rotate in headline
+    const carouselWords = [
+      "plumber",
+      "wedding planner",
+      "carpenter",
+      "electrician",
+      "cleaner",
+      "gardener",
+      "painter",
+      "roofer",
+      "locksmith",
+      "dog walker"
+    ];
+    const headlineWord = document.getElementById("headlineCarouselWord");
+    let currentWordIdx = 0;
+    
+    if (headlineWord) {
+      // Rotate headline word every 3.5 seconds
+      setInterval(() => {
+        currentWordIdx = (currentWordIdx + 1) % carouselWords.length;
+        headlineWord.textContent = carouselWords[currentWordIdx];
+        headlineWord.classList.add("word-change-animate");
+        setTimeout(() => {
+          headlineWord.classList.remove("word-change-animate");
+        }, 300);
+      }, 3500);
+    }
+
+    /* ------------------------------------------------------------------------
+       2.5 HERO QUICK ACTIONS + SERVICE BOARD
+       ------------------------------------------------------------------------ */
+    const heroQuickInput = document.getElementById("heroQuickInput");
+    const heroQuickGo = document.getElementById("heroQuickGo");
+    const simulatorInputMock = document.querySelector(".simulator-input-mock");
+    const quickChips = document.querySelectorAll(".quick-chip");
+    const serviceTiles = document.querySelectorAll(".service-tile-btn");
+    const availabilityPulseText = document.getElementById("availabilityPulseText");
+    const pricePulseText = document.getElementById("pricePulseText");
+    const latencyPulseText = document.getElementById("latencyPulseText");
+
+    function updateServiceSelection(service, prompt, availability, price, latency) {
+      if (headlineWord && service) {
+        headlineWord.textContent = service;
+        headlineWord.classList.add("word-change-animate");
+        setTimeout(() => headlineWord.classList.remove("word-change-animate"), 260);
+      }
+
+      if (heroQuickInput && prompt) {
+        heroQuickInput.value = prompt;
+      }
+
+      if (simulatorInputMock && prompt) {
+        simulatorInputMock.textContent = prompt;
+      }
+
+      if (availabilityPulseText && availability) {
+        availabilityPulseText.textContent = availability;
+      }
+
+      if (pricePulseText && price) {
+        pricePulseText.textContent = price;
+      }
+
+      if (latencyPulseText && latency) {
+        latencyPulseText.textContent = latency;
+      }
+    }
+
+    quickChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        quickChips.forEach((item) => item.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        updateServiceSelection(chip.dataset.service, chip.dataset.prompt);
+      });
+    });
+
+    serviceTiles.forEach((tile) => {
+      tile.addEventListener("click", () => {
+        serviceTiles.forEach((item) => item.classList.remove("is-active"));
+        tile.classList.add("is-active");
+
+        updateServiceSelection(
+          tile.dataset.service,
+          tile.dataset.prompt,
+          tile.dataset.availability,
+          tile.dataset.price,
+          tile.dataset.latency,
+        );
+      });
+    });
+
+    if (heroQuickInput && heroQuickGo) {
+      const syncQuickLink = () => {
+        const value = heroQuickInput.value.trim();
+        if (value) {
+          heroQuickGo.href = "{{ url_for('consumer.chat') }}?q=" + encodeURIComponent(value);
+        } else {
+          heroQuickGo.href = "{{ url_for('consumer.chat') }}";
+        }
+      };
+
+      heroQuickInput.addEventListener("input", syncQuickLink);
+      heroQuickInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          heroQuickGo.click();
+        }
+      });
+
+      syncQuickLink();
+    }
+    
+    // Original carousel logic (kept for backwards compatibility, now hidden)
     const carouselTrack = document.getElementById("carouselTrack");
     const carouselDots = document.getElementById("carouselDots");
     
@@ -1480,7 +1945,55 @@
     }
 
     /* ------------------------------------------------------------------------
-       3. STICKY FLOATING WELCOME POPUP BALLOON
+       3. LIVE PROOF FEED + DYNAMIC METRICS
+       ------------------------------------------------------------------------ */
+    const liveProofText = document.getElementById("liveProofText");
+    const metricsLiveText = document.getElementById("metricsLiveText");
+    const metricMatchCount = document.getElementById("metricMatchCount");
+    const metricReplySpeed = document.getElementById("metricReplySpeed");
+
+    const proofMessages = [
+      "23 requests matched in London in the last hour.",
+      "9 urgent electrical jobs connected in Manchester today.",
+      "Average first provider reply in Bristol is now 12 minutes.",
+      "16 homeowners started new Marley chats in the last 30 minutes.",
+    ];
+
+    const metricSignalMessages = [
+      "New urgent request posted in Birmingham.",
+      "High cleaner availability in SE1 right now.",
+      "Peak demand detected for emergency plumbing in SW1A.",
+      "Provider response activity up 14% this afternoon.",
+    ];
+
+    let proofIdx = 0;
+    if (liveProofText && metricsLiveText) {
+      setInterval(() => {
+        proofIdx = (proofIdx + 1) % proofMessages.length;
+        liveProofText.textContent = proofMessages[proofIdx];
+        metricsLiveText.textContent = metricSignalMessages[proofIdx % metricSignalMessages.length];
+      }, 3200);
+    }
+
+    if (metricMatchCount) {
+      let matchCount = 14200;
+      setInterval(() => {
+        matchCount += Math.floor(Math.random() * 3);
+        metricMatchCount.textContent = matchCount.toLocaleString("en-GB") + "+";
+      }, 4000);
+    }
+
+    if (metricReplySpeed) {
+      const speedVariants = ["< 90 Secs", "~ 74 Secs", "~ 68 Secs", "~ 81 Secs"];
+      let speedIdx = 0;
+      setInterval(() => {
+        speedIdx = (speedIdx + 1) % speedVariants.length;
+        metricReplySpeed.textContent = speedVariants[speedIdx];
+      }, 4600);
+    }
+
+    /* ------------------------------------------------------------------------
+       4. STICKY FLOATING WELCOME POPUP BALLOON
        ------------------------------------------------------------------------ */
     const popupBalloon = document.getElementById("marleyChatPopup");
     const closePopupBtn = document.getElementById("closePopupBtn");

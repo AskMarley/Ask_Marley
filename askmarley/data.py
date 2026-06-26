@@ -141,6 +141,14 @@ CONSUMER_TIERS = {
     "business-plus": {"label": "Business Plus", "max_projects": 999, "price": "\u00a319.99/mo"},
 }
 
+CONSUMER_TIER_PRIORITY = {
+    "free": 0,
+    "student": 1,
+    "individual": 2,
+    "business": 3,
+    "business-plus": 4,
+}
+
 PROVIDER_TIERS = {
     "basic": {
         "label": "Basic",

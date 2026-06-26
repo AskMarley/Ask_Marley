@@ -1,0 +1,325 @@
+{% extends "admin_shell.html" %}
+{% block admin_content %}
+{% set crm = namespace(total=consumers|length, disabled=0, active=0, projects=0, saved=0, pins=0) %}
+{% for consumer in consumers %}
+  {% if consumer.account_disabled %}
+    {% set crm.disabled = crm.disabled + 1 %}
+  {% else %}
+    {% set crm.active = crm.active + 1 %}
+  {% endif %}
+  {% set crm.projects = crm.projects + consumer.project_count %}
+  {% set crm.saved = crm.saved + consumer.saved_provider_count %}
+  {% set crm.pins = crm.pins + consumer.pinboard_count %}
+{% endfor %}
+
+<section class="admin-panels">
+  <article class="admin-panel">
+    <section class="consumer-crm-hero">
+      <div class="consumer-crm-hero-copy">
+        <p class="admin-eyebrow">Consumer CRM</p>
+        <h2>Relationships, plans, activity, and account control in one command view.</h2>
+        <p>Use this workspace to review who your consumers are, what they are doing, what plan they are on, and whether the account should be active.</p>
+      </div>
+
+      <div class="consumer-crm-summary-grid">
+        <article class="consumer-summary-card">
+          <span>Total Consumers</span>
+          <strong id="consumerSummaryVisible">{{ crm.total }}</strong>
+          <small>Visible in current view</small>
+        </article>
+        <article class="consumer-summary-card">
+          <span>Active Accounts</span>
+          <strong>{{ crm.active }}</strong>
+          <small>{{ crm.disabled }} disabled</small>
+        </article>
+        <article class="consumer-summary-card">
+          <span>Projects Tracked</span>
+          <strong>{{ crm.projects }}</strong>
+          <small>{{ crm.saved }} saved providers</small>
+        </article>
+        <article class="consumer-summary-card">
+          <span>Pinboard Activity</span>
+          <strong>{{ crm.pins }}</strong>
+          <small>Consumer media and notes</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="consumer-crm-toolbar-panel">
+      <div class="admin-toolbar consumer-toolbar consumer-toolbar-grid">
+        <input type="search" id="consumerSearch" placeholder="Search consumer name, email, postcode">
+        <select id="consumerStatusFilter">
+          <option value="all">All account states</option>
+          <option value="active">Active</option>
+          <option value="disabled">Disabled</option>
+        </select>
+        <select id="consumerTierFilter">
+          <option value="all">All plans</option>
+          {% for key, tier in consumer_tiers.items() %}
+            <option value="{{ key }}">{{ tier.label }}</option>
+          {% endfor %}
+        </select>
+        <span class="result-meta" id="consumerFilterCount">Showing {{ consumers|length }} consumers</span>
+      </div>
+    </section>
+
+    <div class="consumer-crm-workspace">
+      <aside class="consumer-roster-panel">
+        <div class="consumer-roster-head">
+          <p class="crm-kicker">Consumer Roster</p>
+          <h3>Accounts</h3>
+        </div>
+        <div class="consumer-roster-list">
+          {% for consumer in consumers %}
+            <a
+              href="{{ url_for('admin.consumers_page', consumer_id=consumer.id) }}"
+              class="consumer-roster-item js-consumer-card{% if selected_consumer and selected_consumer.id == consumer.id %} is-selected{% endif %}"
+              data-name="{{ consumer.full_name|lower }}"
+              data-email="{{ consumer.email|lower }}"
+              data-postcode="{{ consumer.consumer_postcode|lower }}"
+              data-status="{% if consumer.account_disabled %}disabled{% else %}active{% endif %}"
+              data-tier="{{ consumer.selected_tier|lower }}"
+            >
+              <div class="consumer-roster-main">
+                <span class="consumer-roster-avatar">{{ consumer.full_name[0] | upper }}</span>
+                <div>
+                  <strong>{{ consumer.full_name }}</strong>
+                  <p>{{ consumer.email }}</p>
+                  <small>{{ consumer.consumer_postcode or 'No postcode' }} • {{ consumer.last_activity_at or 'No activity' }}</small>
+                </div>
+              </div>
+              <div class="consumer-roster-side">
+                <span class="status-pill {% if consumer.account_disabled %}status-disabled{% else %}status-active{% endif %}">
+                  {% if consumer.account_disabled %}Disabled{% else %}Active{% endif %}
+                </span>
+                <span class="status-pill tier-{{ consumer.selected_tier|replace('+', '-')|lower }}">{{ consumer.selected_tier|replace('-', ' ')|title }}</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <section class="consumer-detail-panel">
+        {% if selected_consumer %}
+          <div class="consumer-detail-sticky">
+            <header class="consumer-detail-hero">
+              <div class="consumer-crm-identity">
+                <span class="consumer-crm-avatar">{{ selected_consumer.full_name[0] | upper }}</span>
+                <div>
+                  <h3>{{ selected_consumer.full_name }}</h3>
+                  <p class="consumer-crm-email">{{ selected_consumer.email }}</p>
+                  <p class="consumer-crm-submeta">{{ selected_consumer.consumer_postcode or 'No postcode' }}{% if selected_consumer.consumer_phone %} • {{ selected_consumer.consumer_phone }}{% endif %}</p>
+                </div>
+              </div>
+              <div class="consumer-crm-pills">
+                <span class="status-pill {% if selected_consumer.account_disabled %}status-disabled{% else %}status-active{% endif %}">
+                  {% if selected_consumer.account_disabled %}Disabled{% else %}Active{% endif %}
+                </span>
+                <span class="status-pill tier-{{ selected_consumer.selected_tier|replace('+', '-')|lower }}">{{ selected_consumer.selected_tier|replace('-', ' ')|title }}</span>
+                <span class="status-pill">{{ selected_consumer.billing_status|replace('_', ' ')|title }}</span>
+              </div>
+            </header>
+
+            <div class="consumer-crm-metric-row consumer-detail-metrics">
+              <article>
+                <span>Projects</span>
+                <strong>{{ selected_consumer.project_count }}</strong>
+              </article>
+              <article>
+                <span>Saved Providers</span>
+                <strong>{{ selected_consumer.saved_provider_count }}</strong>
+              </article>
+              <article>
+                <span>Pinboard Items</span>
+                <strong>{{ selected_consumer.pinboard_count }}</strong>
+              </article>
+            </div>
+
+            <div class="consumer-detail-grid">
+              <section class="consumer-detail-card">
+                <p class="crm-kicker">Profile</p>
+                <div class="consumer-crm-details">
+                  <div><span>Phone</span><strong>{{ selected_consumer.consumer_phone or 'Not provided' }}</strong></div>
+                  <div><span>Postcode</span><strong>{{ selected_consumer.consumer_postcode or 'Not provided' }}</strong></div>
+                  <div><span>Created</span><strong>{{ selected_consumer.created_at or 'N/A' }}</strong></div>
+                  <div><span>Last Activity</span><strong>{{ selected_consumer.last_activity_at or 'N/A' }}</strong></div>
+                </div>
+              </section>
+
+              <section class="consumer-detail-card">
+                <p class="crm-kicker">Recent Projects</p>
+                {% if selected_consumer.projects %}
+                  <ul class="consumer-mini-list">
+                    {% for project in selected_consumer.projects %}
+                      <li>
+                        <strong>{{ project.name }}</strong>
+                        <span>{{ project.status|title }}</span>
+                        <small>{{ project.updated_at }}</small>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="muted">No active projects tracked yet.</p>
+                {% endif %}
+              </section>
+            </div>
+
+            <div class="consumer-detail-grid">
+              <section class="consumer-detail-card">
+                <p class="crm-kicker">Timeline</p>
+                {% if selected_consumer.timeline %}
+                  <ul class="consumer-timeline-list">
+                    {% for event in selected_consumer.timeline %}
+                      <li>
+                        <strong>{{ event.title }}</strong>
+                        <p>{{ event.meta }}</p>
+                        <small>{{ event.timestamp }}</small>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="muted">No timeline events yet.</p>
+                {% endif %}
+              </section>
+
+              <section class="consumer-detail-card">
+                <p class="crm-kicker">Admin Notes</p>
+                <form method="post" class="admin-form crm-note-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="return_to" value="{{ url_for('admin.consumers_page', consumer_id=selected_consumer.id) }}">
+                  <input type="hidden" name="consumer_id" value="{{ selected_consumer.id }}">
+                  <input type="hidden" name="action" value="add-consumer-note">
+                  <textarea name="note" rows="3" placeholder="Add internal note" required></textarea>
+                  <button class="btn btn-light" type="submit">Add Note</button>
+                </form>
+
+                {% if selected_consumer.notes %}
+                  <ul class="consumer-note-list">
+                    {% for note in selected_consumer.notes %}
+                      <li>
+                        <p>{{ note.note }}</p>
+                        <small>{{ note.actor }} • {{ note.timestamp }}</small>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="muted">No admin notes yet.</p>
+                {% endif %}
+              </section>
+            </div>
+
+            <section class="consumer-detail-card consumer-action-drawer">
+              <p class="crm-kicker">Actions</p>
+              <div class="consumer-crm-actions">
+                <details class="crm-action-group" open>
+                  <summary>Account Controls</summary>
+                  <form method="post" class="admin-form crm-inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="return_to" value="{{ url_for('admin.consumers_page', consumer_id=selected_consumer.id) }}">
+                    <input type="hidden" name="consumer_id" value="{{ selected_consumer.id }}">
+                    <input type="hidden" name="action" value="{% if selected_consumer.account_disabled %}enable-consumer-account{% else %}disable-consumer-account{% endif %}">
+                    <input type="text" name="reason" placeholder="Reason for account change" required>
+                    <button class="btn {% if selected_consumer.account_disabled %}btn-light{% else %}btn-danger{% endif %}" type="submit">
+                      {% if selected_consumer.account_disabled %}Enable Account{% else %}Disable Account{% endif %}
+                    </button>
+                  </form>
+                </details>
+
+                <details class="crm-action-group">
+                  <summary>Plan Controls</summary>
+                  <form method="post" class="admin-form crm-inline-form crm-plan-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="return_to" value="{{ url_for('admin.consumers_page', consumer_id=selected_consumer.id) }}">
+                    <input type="hidden" name="consumer_id" value="{{ selected_consumer.id }}">
+                    <input type="hidden" name="action" value="update-consumer-plan">
+                    <select name="new_tier">
+                      {% for key, tier in consumer_tiers.items() %}
+                        <option value="{{ key }}" {% if key == selected_consumer.selected_tier %}selected{% endif %}>{{ tier.label }}</option>
+                      {% endfor %}
+                    </select>
+                    <select name="billing_status">
+                      {% for key, label in billing_statuses.items() %}
+                        <option value="{{ key }}" {% if key == selected_consumer.billing_status %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <input type="text" name="reason" placeholder="Reason for plan change" required>
+                    <button class="btn btn-primary" type="submit">Update Plan</button>
+                  </form>
+                </details>
+
+                <details class="crm-action-group">
+                  <summary>Outreach</summary>
+                  <form method="post" class="admin-form crm-email-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="return_to" value="{{ url_for('admin.consumers_page', consumer_id=selected_consumer.id) }}">
+                    <input type="hidden" name="consumer_id" value="{{ selected_consumer.id }}">
+                    <input type="hidden" name="action" value="send-consumer-email">
+                    <input type="text" name="subject" placeholder="Email subject" required>
+                    <textarea name="message" rows="3" placeholder="Email message" required></textarea>
+                    <button class="btn btn-light" type="submit">Log Email Outreach</button>
+                    <a class="btn btn-light" href="mailto:{{ selected_consumer.email }}">Open Mail App</a>
+                  </form>
+                </details>
+              </div>
+
+              {% if selected_consumer.account_disabled_reason %}
+                <p class="consumer-disabled-note"><strong>Disable reason:</strong> {{ selected_consumer.account_disabled_reason }}</p>
+              {% endif %}
+            </section>
+          </div>
+        {% else %}
+          <section class="consumer-detail-empty">
+            <h3>No consumer selected</h3>
+            <p>Choose a consumer from the left to inspect profile data, activity, notes, and controls.</p>
+          </section>
+        {% endif %}
+      </section>
+    </div>
+  </article>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const cards = Array.from(document.querySelectorAll(".js-consumer-card"));
+    const search = document.getElementById("consumerSearch");
+    const status = document.getElementById("consumerStatusFilter");
+    const tier = document.getElementById("consumerTierFilter");
+    const countLabel = document.getElementById("consumerFilterCount");
+    const summaryVisible = document.getElementById("consumerSummaryVisible");
+
+    const applyFilter = () => {
+      const searchValue = (search?.value || "").trim().toLowerCase();
+      const statusValue = status?.value || "all";
+      const tierValue = tier?.value || "all";
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const haystack = [card.dataset.name, card.dataset.email, card.dataset.postcode].join(" ");
+        const searchMatch = !searchValue || haystack.includes(searchValue);
+        const statusMatch = statusValue === "all" || card.dataset.status === statusValue;
+        const tierMatch = tierValue === "all" || card.dataset.tier === tierValue;
+        const show = searchMatch && statusMatch && tierMatch;
+        card.classList.toggle("is-hidden", !show);
+        if (show) {
+          visibleCount += 1;
+        }
+      });
+
+      if (countLabel) {
+        countLabel.textContent = `Showing ${visibleCount} consumer${visibleCount === 1 ? "" : "s"}`;
+      }
+
+      if (summaryVisible) {
+        summaryVisible.textContent = visibleCount;
+      }
+    };
+
+    search?.addEventListener("input", applyFilter);
+    status?.addEventListener("change", applyFilter);
+    tier?.addEventListener("change", applyFilter);
+    applyFilter();
+  });
+</script>
+{% endblock %}

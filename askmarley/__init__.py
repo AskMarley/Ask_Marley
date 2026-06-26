@@ -1,14 +1,15 @@
 import click
 import os
+from pathlib import Path
 from flask import Flask
 from sqlalchemy import inspect
+import sqlalchemy as sa
 
 from askmarley.blueprints.admin import admin_bp
 from askmarley.blueprints.auth import auth_bp
 from askmarley.blueprints.consumer import consumer_bp
 from askmarley.blueprints.main import main_bp
 from askmarley.blueprints.provider import provider_bp
-from askmarley.config import CONFIG_MAP
 from askmarley.extensions import db, migrate
 from askmarley.seed import seed_baseline_data
 from askmarley.services.auth import ensure_default_users, get_current_user
@@ -21,7 +22,27 @@ from askmarley.services.security import (
 )
 
 
+def _load_local_env():
+    """Load key=value pairs from a local .env file for development."""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and not os.getenv(key):
+            os.environ[key] = value
+
+
 def create_app(config_name=None):
+    _load_local_env()
+    from askmarley.config import CONFIG_MAP
+
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
     env_config = (os.getenv("FLASK_ENV") or "development").strip().lower()
@@ -70,10 +91,43 @@ def create_app(config_name=None):
         if selected_config in {"development", "testing"}:
             # Keep local/dev bootstrapping simple while production relies on Alembic.
             db.create_all()
+            inspector = inspect(db.engine)
+            if inspector.has_table("subscriptions"):
+                subscription_columns = {column["name"] for column in inspector.get_columns("subscriptions")}
+                if "pending_plan_code" not in subscription_columns:
+                    with db.engine.begin() as connection:
+                        connection.execute(sa.text("ALTER TABLE subscriptions ADD COLUMN pending_plan_code VARCHAR(40)"))
+            if inspector.has_table("projects"):
+                project_columns = {column["name"] for column in inspector.get_columns("projects")}
+                with db.engine.begin() as connection:
+                    if "service_slug" not in project_columns:
+                        connection.execute(sa.text("ALTER TABLE projects ADD COLUMN service_slug VARCHAR(80)"))
+                    if "location_code" not in project_columns:
+                        connection.execute(sa.text("ALTER TABLE projects ADD COLUMN location_code VARCHAR(12)"))
         inspector = inspect(db.engine)
         if inspector.has_table("users"):
             user_columns = {column["name"] for column in inspector.get_columns("users")}
-            required_columns = {"password_hash", "company_name", "phone", "business_reg_number", "service_categories", "travel_postcodes", "insurance_verified", "provider_status", "consumer_phone", "consumer_postcode"}
+            with db.engine.begin() as connection:
+                if "account_disabled" not in user_columns:
+                    connection.execute(sa.text("ALTER TABLE users ADD COLUMN account_disabled BOOLEAN NOT NULL DEFAULT 0"))
+                if "account_disabled_reason" not in user_columns:
+                    connection.execute(sa.text("ALTER TABLE users ADD COLUMN account_disabled_reason VARCHAR(255)"))
+            inspector = inspect(db.engine)
+            user_columns = {column["name"] for column in inspector.get_columns("users")}
+            required_columns = {
+                "password_hash",
+                "company_name",
+                "phone",
+                "business_reg_number",
+                "service_categories",
+                "travel_postcodes",
+                "insurance_verified",
+                "provider_status",
+                "consumer_phone",
+                "consumer_postcode",
+                "account_disabled",
+                "account_disabled_reason",
+            }
             if required_columns.issubset(user_columns):
                 ensure_default_users()
 

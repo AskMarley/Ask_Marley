@@ -24,6 +24,8 @@ class User(TimestampMixin, db.Model):
     # Consumer-specific fields
     consumer_phone = db.Column(db.String(20), nullable=True)
     consumer_postcode = db.Column(db.String(10), nullable=True)
+    account_disabled = db.Column(db.Boolean, nullable=False, default=False)
+    account_disabled_reason = db.Column(db.String(255), nullable=True)
     # Provider-specific fields
     company_name = db.Column(db.String(160), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
@@ -73,6 +75,8 @@ class Project(TimestampMixin, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     name = db.Column(db.String(160), nullable=False)
     status = db.Column(db.String(40), nullable=False, default="active")
+    service_slug = db.Column(db.String(80), nullable=True)
+    location_code = db.Column(db.String(12), nullable=True)
 
     user = db.relationship("User", backref=db.backref("projects", lazy=True))
 
@@ -184,6 +188,7 @@ class Subscription(TimestampMixin, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     provider_id = db.Column(db.Integer, db.ForeignKey("providers.id"), nullable=True)
     plan_code = db.Column(db.String(40), nullable=False)
+    pending_plan_code = db.Column(db.String(40), nullable=True)
     status = db.Column(db.String(30), nullable=False, default="active")
 
 

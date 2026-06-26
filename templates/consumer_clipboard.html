@@ -2,87 +2,225 @@
 {% block title %}AskMarley | Clipboard{% endblock %}
 {% block content %}
 <section class="portal-head">
+  <p class="portal-kicker">Workspace</p>
   <h1>Clipboard Dashboard</h1>
-  <p>Manage project boards, saved providers, and pinboard assets.</p>
+  <p>Manage projects, saved providers, and pinboard assets from one focused workspace.</p>
 </section>
 
-<section class="split">
-  <article>
-    <div class="tier-box">
-      <h3>Your Plan: {{ user_tier.label }}</h3>
-      <p>{{ user_tier.price }} | Max Projects: {{ user_tier.max_projects if user_tier.max_projects != 999 else 'Unlimited' }}</p>
-      <p><strong>Selected:</strong> {{ consumer_sub.selected_tier|title }} | <strong>Billing:</strong> {{ consumer_sub.billing_status|replace('_', ' ')|title }}</p>
-      {% if over_limit %}
-        <p class="alert">You are over your active project limit. Upgrade to continue managing all projects.</p>
-      {% endif %}
-      <div class="tier-links">
+<section class="clipboard-layout">
+  <article class="clipboard-main">
+    <section class="clipboard-plan-panel">
+      <div class="clipboard-plan-head">
+        <div>
+          <p class="clipboard-eyebrow">Active Plan</p>
+          <h2>{{ user_tier.label }}</h2>
+        </div>
+        <span class="clipboard-billing-badge">{{ consumer_sub.billing_status|replace('_', ' ')|title }}</span>
+      </div>
+
+      <div class="clipboard-plan-metrics">
+        <div>
+          <small>Monthly Price</small>
+          <strong>{{ user_tier.price }}</strong>
+        </div>
+        <div>
+          <small>Project Limit</small>
+          <strong>{{ user_tier.max_projects if user_tier.max_projects != 999 else 'Unlimited' }}</strong>
+        </div>
+        <div>
+          <small>Projects</small>
+          <strong>{{ stats.project_count }}</strong>
+        </div>
+        <div>
+          <small>Saved Providers</small>
+          <strong>{{ stats.saved_provider_count }}</strong>
+        </div>
+        <div>
+          <small>Pinboard Items</small>
+          <strong>{{ stats.pinboard_count }}</strong>
+        </div>
+        <div>
+          <small>Workspace State</small>
+          <strong>{% if over_limit %}Needs Upgrade{% else %}Healthy{% endif %}</strong>
+        </div>
+      </div>
+
+      <div class="clipboard-plan-note">
+        <p>
+          {% if over_limit %}
+            You are over your active project limit. Upgrade to keep working across all projects.
+          {% else %}
+            You are within your plan limits. Use the shortcuts below to create, save, or pin faster.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="clipboard-tier-links">
         {% for key, tier in consumer_tiers.items() %}
-          <a href="{{ url_for('consumer.clipboard', tier=key) }}">{{ tier.label }}</a>
+          <a class="{% if key == user_tier_slug %}active{% endif %}" href="{{ url_for('consumer.clipboard', tier=key) }}">{{ tier.label }}</a>
         {% endfor %}
       </div>
 
-      <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard', tier=user_tier_slug) }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="text" name="project_name" placeholder="Create a new project, e.g. Loft Conversion" required>
-        <button class="btn btn-primary" type="submit">Create Project</button>
-      </form>
-      <a class="btn btn-light" href="{{ url_for('consumer.subscription') }}">Manage Subscription</a>
-    </div>
+      <div class="clipboard-plan-actions">
+        <form class="admin-form clipboard-create-form" method="post" action="{{ url_for('consumer.clipboard', tier=user_tier_slug) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="project_name" placeholder="Create a new project, e.g. Loft Conversion" required>
+          <select name="service_slug" required>
+            <option value="">Choose service</option>
+            {% for slug, service in service_options.items() %}
+              <option value="{{ slug }}">{{ service.name }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" name="location_code" value="{{ consumer_default_postcode }}" placeholder="Project postcode or area, e.g. SW1A 1AA" required>
+          <button class="btn btn-primary" type="submit">Create Project</button>
+        </form>
+        <a class="btn btn-light" href="{{ url_for('consumer.subscription') }}">Manage Subscription</a>
+      </div>
+    </section>
 
-    <div class="grid-cards">
-      {% for project in projects %}
-        <article class="card">
-          <h3>{{ project.name }}</h3>
-          <p>Status: {{ project.status }}</p>
-          <p><strong>Saved Providers:</strong> {{ project.saved_providers|join(', ') }}</p>
-          
-          {% if project.pinboard_items %}
-            <div class="pinboard-gallery">
-              <h4>Pinboard Items:</h4>
-              <div class="gallery-grid">
-                {% for item in project.pinboard_items %}
-                  <div class="gallery-item">
-                    {% if item is mapping and item.get('image') %}
-                      <img src="{{ item.image }}" alt="{{ item.label }}" loading="lazy">
-                      <p class="gallery-label">{{ item.label }}</p>
-                    {% elif item is string %}
-                      <p class="gallery-label">{{ item }}</p>
-                    {% else %}
-                      <p class="gallery-label">{{ item.label if item is mapping else item }}</p>
-                    {% endif %}
-                  </div>
-                {% endfor %}
+    <section class="clipboard-projects-section">
+      <div class="clipboard-projects-head">
+        <h2>Your Projects</h2>
+        <span>{{ projects|length }} total</span>
+      </div>
+
+      <div class="clipboard-project-grid">
+        {% for project in projects %}
+          <article class="clipboard-project-card">
+            <header class="clipboard-project-header">
+              <div>
+                <p class="clipboard-project-eyebrow">Project</p>
+                <h3>{{ project.name }}</h3>
+              </div>
+              <div class="clipboard-project-header-meta">
+                <span class="clipboard-status-pill">{{ project.status }}</span>
+                <span class="clipboard-project-count">{{ project.pinboard_items|length }} pins</span>
+              </div>
+            </header>
+
+            <div class="clipboard-project-subgrid">
+              <p class="clipboard-provider-summary">
+                <strong>Lead Details</strong>
+                <span>
+                  {{ service_options[project.service_slug].name if project.service_slug and project.service_slug in service_options else 'Service pending' }}
+                  {% if project.location_code %}
+                    | {{ project.location_code }}
+                  {% endif %}
+                </span>
+              </p>
+
+              <p class="clipboard-provider-summary">
+                <strong>Saved Providers</strong>
+                <span>
+                  {% if project.saved_providers %}
+                    {{ project.saved_providers|join(', ') }}
+                  {% else %}
+                    None yet
+                  {% endif %}
+                </span>
+              </p>
+
+              <div class="clipboard-project-cta-row">
+                <a class="btn btn-primary" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>
+                <a class="btn btn-light" href="#project-actions-{{ project.id }}">Add More</a>
               </div>
             </div>
-          {% endif %}
 
-          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_save_provider', project_id=project.id, tier=user_tier_slug) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <select name="provider_name" required>
-              <option value="">Save provider to project</option>
-              {% for provider_name in all_provider_names %}
-                <option value="{{ provider_name }}">{{ provider_name }}</option>
-              {% endfor %}
-            </select>
-            <button class="btn btn-light" type="submit">Save Provider</button>
-          </form>
+            <div class="clipboard-action-grid" id="project-actions-{{ project.id }}">
+              <form class="admin-form clipboard-action-form" method="post" action="{{ url_for('consumer.clipboard_update_project_details', project_id=project.id, tier=user_tier_slug) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Edit Lead Details</label>
+                <select name="service_slug" required>
+                  {% for slug, service in service_options.items() %}
+                    <option value="{{ slug }}" {% if project.service_slug == slug %}selected{% endif %}>{{ service.name }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="location_code" value="{{ project.location_code or consumer_default_postcode }}" placeholder="Update postcode or area" required>
+                <button class="btn btn-light" type="submit">Save Details</button>
+              </form>
 
-          <form class="admin-form" method="post" action="{{ url_for('consumer.clipboard_pinboard_add', project_id=project.id, tier=user_tier_slug) }}" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="pin_label" placeholder="Add pinboard item label" required>
-            <input type="file" name="pin_image" accept="image/*" style="font-size: 0.85rem; padding: 0.5rem;">
-            <button class="btn btn-light" type="submit">Add to Pinboard</button>
-          </form>
+              <form class="admin-form clipboard-action-form" method="post" action="{{ url_for('consumer.clipboard_save_provider', project_id=project.id, tier=user_tier_slug) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Add Provider</label>
+                <select name="provider_name" required>
+                  <option value="">Save provider to project</option>
+                  {% for provider_name in all_provider_names %}
+                    <option value="{{ provider_name }}">{{ provider_name }}</option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-light" type="submit">Save Provider</button>
+              </form>
 
-          <a class="btn btn-primary" href="{{ url_for('consumer.project_chat', project_id=project.id) }}">Open Project Chat</a>
-        </article>
-      {% endfor %}
-    </div>
+              <form class="admin-form clipboard-action-form" method="post" action="{{ url_for('consumer.clipboard_pinboard_add', project_id=project.id, tier=user_tier_slug) }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Add Pinboard Item</label>
+                <input type="text" name="pin_label" placeholder="Add pinboard item label" required>
+                <input class="clipboard-file-input" type="file" name="pin_image" accept="image/*">
+                <button class="btn btn-light" type="submit">Add to Pinboard</button>
+              </form>
+            </div>
+
+            {% if project.pinboard_items %}
+              <div class="pinboard-gallery">
+                <h4>Pinboard Items</h4>
+                <div class="gallery-grid">
+                  {% for item in project.pinboard_items %}
+                    {% if item is mapping and item.get('image') %}
+                      <button
+                        class="gallery-item clipboard-gallery-trigger"
+                        type="button"
+                        data-gallery-project="{{ project.id }}"
+                        data-gallery-src="{{ item.image }}"
+                        data-gallery-label="{{ item.label }}"
+                        aria-label="Open item {{ item.label }}"
+                      >
+                        <img src="{{ item.image }}" alt="{{ item.label }}" loading="lazy">
+                        <p class="gallery-label">{{ item.label }}</p>
+                      </button>
+                    {% elif item is string %}
+                      <button
+                        class="gallery-item gallery-item-text-only clipboard-gallery-trigger"
+                        type="button"
+                        data-gallery-project="{{ project.id }}"
+                        data-gallery-src=""
+                        data-gallery-label="{{ item }}"
+                        aria-label="Open item {{ item }}"
+                      >
+                        <p class="gallery-label">{{ item }}</p>
+                      </button>
+                    {% else %}
+                      <button
+                        class="gallery-item gallery-item-text-only clipboard-gallery-trigger"
+                        type="button"
+                        data-gallery-project="{{ project.id }}"
+                        data-gallery-src=""
+                        data-gallery-label="{{ item.label if item is mapping else item }}"
+                        aria-label="Open item {{ item.label if item is mapping else item }}"
+                      >
+                        <p class="gallery-label">{{ item.label if item is mapping else item }}</p>
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+
+          </article>
+        {% endfor %}
+      </div>
+    </section>
   </article>
 
-  <aside class="chat-sidepanel">
-    <h3>Realtime Chat + Pinboards</h3>
-    <ul class="provider-list">
+  <aside class="clipboard-overview-panel">
+    <div class="clipboard-overview-head">
+      <div>
+        <p class="clipboard-eyebrow">At a Glance</p>
+        <h3>Workspace Overview</h3>
+      </div>
+      <span class="clipboard-overview-count">{{ projects|length }} boards</span>
+    </div>
+    <p>Track every project at a glance and jump into chat when you are ready.</p>
+    <ul class="clipboard-overview-list">
       {% for project in projects %}
         <li>
           <strong>{{ project.name }}</strong>
@@ -92,4 +230,148 @@
     </ul>
   </aside>
 </section>
+
+<div class="clipboard-gallery-modal" id="clipboardGalleryModal" aria-hidden="true">
+  <div class="clipboard-gallery-backdrop" data-gallery-close></div>
+  <div class="clipboard-gallery-dialog" role="dialog" aria-modal="true" aria-label="Pinboard media viewer">
+    <button class="clipboard-gallery-close" type="button" data-gallery-close aria-label="Close gallery">&times;</button>
+    <button class="clipboard-gallery-nav prev" type="button" data-gallery-prev aria-label="Previous media">&lsaquo;</button>
+    <div class="clipboard-gallery-stage">
+      <img id="clipboardGalleryImage" src="" alt="Pinboard media preview">
+      <div id="clipboardGalleryFallback" class="clipboard-gallery-fallback" hidden>No image attached to this pinboard item.</div>
+      <p id="clipboardGalleryCaption"></p>
+    </div>
+    <button class="clipboard-gallery-nav next" type="button" data-gallery-next aria-label="Next media">&rsaquo;</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    const modal = document.getElementById("clipboardGalleryModal");
+    if (!modal) {
+      return;
+    }
+
+    const imageEl = document.getElementById("clipboardGalleryImage");
+    const fallbackEl = document.getElementById("clipboardGalleryFallback");
+    const captionEl = document.getElementById("clipboardGalleryCaption");
+    const triggers = Array.from(document.querySelectorAll(".clipboard-gallery-trigger"));
+    if (!triggers.length) {
+      return;
+    }
+
+    let activeItems = [];
+    let activeIndex = 0;
+    let currentItemHasMedia = false;
+
+    const updateStage = () => {
+      const item = activeItems[activeIndex];
+      if (!item) {
+        return;
+      }
+
+      imageEl.src = item.src;
+      imageEl.alt = item.label || "Pinboard media";
+      captionEl.textContent = item.label || "Pinboard item";
+      currentItemHasMedia = Boolean(item.src);
+
+      if (item.src) {
+        imageEl.hidden = false;
+        fallbackEl.hidden = true;
+        fallbackEl.textContent = "No image attached to this pinboard item.";
+      } else {
+        imageEl.hidden = true;
+        fallbackEl.hidden = false;
+        fallbackEl.textContent = "No image attached to this pinboard item.";
+      }
+    };
+
+    const openModal = (group, src, label) => {
+      activeItems = triggers
+        .filter((el) => el.dataset.galleryProject === group)
+        .map((el) => ({
+          src: el.dataset.gallerySrc,
+          label: el.dataset.galleryLabel,
+        }));
+
+      activeIndex = Math.max(
+        0,
+        activeItems.findIndex((item) => item.src === src && item.label === label)
+      );
+
+      updateStage();
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("gallery-open");
+    };
+
+    const closeModal = () => {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("gallery-open");
+      imageEl.src = "";
+      imageEl.hidden = false;
+      fallbackEl.hidden = true;
+      fallbackEl.textContent = "No image attached to this pinboard item.";
+      captionEl.textContent = "";
+    };
+
+    imageEl.addEventListener("error", () => {
+      if (!currentItemHasMedia) {
+        return;
+      }
+      imageEl.hidden = true;
+      fallbackEl.hidden = false;
+      fallbackEl.textContent = "This media file is unavailable right now.";
+    });
+
+    const move = (delta) => {
+      if (!activeItems.length) {
+        return;
+      }
+
+      activeIndex = (activeIndex + delta + activeItems.length) % activeItems.length;
+      updateStage();
+    };
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        openModal(
+          trigger.dataset.galleryProject,
+          trigger.dataset.gallerySrc,
+          trigger.dataset.galleryLabel
+        );
+      });
+    });
+
+    modal.querySelectorAll("[data-gallery-close]").forEach((el) => {
+      el.addEventListener("click", closeModal);
+    });
+
+    const prevBtn = modal.querySelector("[data-gallery-prev]");
+    const nextBtn = modal.querySelector("[data-gallery-next]");
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => move(-1));
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => move(1));
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (!modal.classList.contains("open")) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        closeModal();
+      } else if (event.key === "ArrowLeft") {
+        move(-1);
+      } else if (event.key === "ArrowRight") {
+        move(1);
+      }
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 {% block title %}AskMarley | Consumer Chat{% endblock %}
 {% block content %}
+{% if auth_gate_required %}
+  <section class="auth-gate-page" aria-modal="true" role="dialog" aria-labelledby="auth-gate-title">
+    <article class="auth-gate-card">
+      <h2 id="auth-gate-title">Login Required</h2>
+      <p>You need to login or create an account to continue chatting with Marley.</p>
+      <div class="auth-gate-actions">
+        <a class="btn btn-primary" href="{{ url_for('auth.login', next=login_next) }}">Log In</a>
+        <a class="btn btn-light" href="{{ url_for('auth.register') }}">Create Account</a>
+      </div>
+    </article>
+  </section>
+{% else %}
 <section class="portal-head">
   <div class="portal-brand-lockup">
-    <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
+    <video class="portal-logo" autoplay muted loop playsinline preload="metadata" aria-label="AskMarley animated logo">
+      <source src="{{ url_for('static', filename='animatedmarley.mp4') }}" type="video/mp4">
+    </video>
   </div>
   <h1>Consumer Portal</h1>
   <p>Talk to Marley to describe your problem and get instant local matches.</p>
@@ -19,7 +33,14 @@
         </h2>
         <p>Live triage and postcode matching</p>
       </div>
-      <a class="btn btn-light" href="{{ url_for('consumer.search') }}">Manual Search</a>
+      <div class="chat-header-actions">
+        <form method="post" action="{{ url_for('consumer.chat') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="new_chat">
+          <button class="btn btn-light" type="submit">New Chat</button>
+        </form>
+        <a class="btn btn-light" href="{{ url_for('consumer.search') }}">Manual Search</a>
+      </div>
     </div>
 
     <div class="chat-log">
@@ -31,10 +52,45 @@
           <div class="bubble">{{ msg.text }}</div>
         </div>
       {% endfor %}
+
+      {% if recommendations %}
+        <div class="bubble-row marley thread-recommendations-row">
+          <img class="chat-bubble-avatar" src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley icon">
+          <div class="bubble thread-recommendations-bubble">
+            <p class="thread-recommendations-label">Recommended Providers</p>
+            <ul class="provider-list thread-provider-list">
+              {% for p in recommendations %}
+                <li>
+                  <div class="provider-title">
+                    <strong>
+                      <a class="provider-link" href="{{ url_for('consumer.provider_detail', provider_id=p.id) }}">{{ p.name }}</a>
+                    </strong>
+                    {% if p.marleys_choice %}
+                      <span class="badge badge-gold">AskMarley's Choice</span>
+                    {% endif %}
+                    {% if p.verified %}
+                      <span class="badge">Verified</span>
+                    {% endif %}
+                  </div>
+                  <p><small>{{ p.postcodes|join(', ') }}</small></p>
+                  <div class="provider-actions-row">
+                    <a class="btn btn-light provider-open-btn" href="{{ url_for('consumer.provider_detail', provider_id=p.id) }}">View Profile</a>
+                    <form method="post" action="{{ url_for('consumer.provider_contact', provider_id=p.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn btn-primary provider-message-btn" type="submit">Message Now</button>
+                    </form>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endif %}
     </div>
 
     <form class="chat-form" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="thread_id" value="{{ active_thread_id }}">
       <input name="message" type="text" placeholder="Type: I have a leaky pipe in SW1A..." autocomplete="off" required>
       <button class="btn btn-primary btn-icon-text" type="submit">
         <img class="btn-icon-image" src="{{ url_for('static', filename='transmarley.png') }}" alt="Marley icon">
@@ -44,13 +100,44 @@
   </article>
 
   <aside class="chat-sidepanel">
+    <details class="chat-history-panel" open>
+      <summary>
+        <span>Chat History</span>
+        <small>{{ chat_history|length }}</small>
+      </summary>
+      {% if chat_history %}
+        <ul class="chat-history-list">
+          {% for thread in chat_history %}
+            <li class="chat-history-item {% if thread.is_active %}active{% endif %}">
+              <div class="chat-history-row">
+                <a href="{{ url_for('consumer.chat', thread=thread.id) }}">
+                  <strong>{{ thread.title }}</strong>
+                  <small>{{ thread.preview }}</small>
+                </a>
+                <form class="chat-history-delete-form" method="post" action="{{ url_for('consumer.chat') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete_chat">
+                  <input type="hidden" name="delete_thread_id" value="{{ thread.id }}">
+                  <button class="btn btn-light chat-history-delete-btn" type="submit" aria-label="Delete chat {{ thread.title }}">Delete</button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No past chats yet.</p>
+      {% endif %}
+    </details>
+
     <h3>Recommended Providers</h3>
     {% if recommendations %}
       <ul class="provider-list">
         {% for p in recommendations %}
           <li>
             <div class="provider-title">
-              <strong>{{ p.name }}</strong>
+              <strong>
+                <a class="provider-link" href="{{ url_for('consumer.provider_detail', provider_id=p.id) }}">{{ p.name }}</a>
+              </strong>
               {% if p.marleys_choice %}
                 <span class="badge badge-gold">AskMarley's Choice</span>
               {% endif %}
@@ -59,6 +146,13 @@
               {% endif %}
             </div>
             <p><small>{{ p.postcodes|join(', ') }}</small></p>
+            <div class="provider-actions-row">
+              <a class="btn btn-light provider-open-btn" href="{{ url_for('consumer.provider_detail', provider_id=p.id) }}">View Profile</a>
+              <form method="post" action="{{ url_for('consumer.provider_contact', provider_id=p.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-primary provider-message-btn" type="submit">Message Now</button>
+              </form>
+            </div>
           </li>
         {% endfor %}
       </ul>
@@ -70,11 +164,19 @@
     <ul class="intent-list">
       {% for slug, intent in service_intents.items() %}
         <li>
-          <strong>{{ intent.name }}</strong>
-          <small>{{ intent.branch }}</small>
+          <form class="quick-intent-form" method="post" action="{{ url_for('consumer.chat') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="thread_id" value="{{ active_thread_id }}">
+            <input type="hidden" name="message" value="{{ quick_intent_messages.get(slug, 'I need ' ~ intent.name) }}">
+            <button class="quick-intent-btn" type="submit" aria-label="Use quick intent {{ intent.name }}">
+              <strong>{{ intent.name }}</strong>
+              <small>{{ intent.branch }}</small>
+            </button>
+          </form>
         </li>
       {% endfor %}
     </ul>
   </aside>
 </section>
+{% endif %}
 {% endblock %}

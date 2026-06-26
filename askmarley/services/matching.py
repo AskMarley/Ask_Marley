@@ -9,6 +9,13 @@ UK_POSTCODE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+UK_POSTCODE_SEARCH_PATTERN = re.compile(
+    r"\b([A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2})\b",
+    re.IGNORECASE,
+)
+
+UK_OUTWARD_CODE_PATTERN = re.compile(r"\b([A-Z]{1,2}\d[A-Z\d]?)\b", re.IGNORECASE)
+
 # Synonym mapping for improved search matching
 SYNONYMS = {
     "emergency-plumber": [
@@ -33,6 +40,11 @@ SYNONYMS = {
         "circuit",
         "voltage",
         "fuse",
+        "appliance",
+        "tv",
+        "television",
+        "smart tv",
+        "screen",
     ],
     "cleaner": [
         "cleaning",
@@ -92,6 +104,15 @@ PRIORITY_PHRASES = {
         "boiler leak",
         "plumbing leak",
     ],
+    "electrician": [
+        "smart tv",
+        "tv repair",
+        "television repair",
+        "fix my tv",
+        "broken tv",
+        "no power",
+        "power trip",
+    ],
 }
 
 
@@ -119,6 +140,29 @@ def split_postcode_parts(postcode):
 def is_valid_uk_postcode(postcode):
     normalized = normalize_uk_postcode(postcode.strip())
     return bool(UK_POSTCODE_PATTERN.match(normalized))
+
+
+def extract_uk_postcode(text):
+    match = UK_POSTCODE_SEARCH_PATTERN.search(text or "")
+    if not match:
+        return None
+
+    candidate = normalize_uk_postcode(match.group(1))
+    if is_valid_uk_postcode(candidate):
+        return candidate
+    return None
+
+
+def extract_uk_location_code(text):
+    postcode = extract_uk_postcode(text)
+    if postcode:
+        return postcode
+
+    outward_match = UK_OUTWARD_CODE_PATTERN.search(text or "")
+    if outward_match:
+        return outward_match.group(1).upper()
+
+    return None
 
 
 def detect_service_details(message):

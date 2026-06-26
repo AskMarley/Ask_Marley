@@ -1,47 +1,83 @@
 {% extends "base.html" %}
 {% block title %}AskMarley | Sign In{% endblock %}
+{% block extra_head %}
+<style>
+  body {
+    background-color: #f3f5f9;
+    background-image: none;
+  }
+
+  .bg-layer {
+    display: none;
+  }
+</style>
+{% endblock %}
 {% block content %}
 <section class="portal-head">
+  <p class="eyebrow">Access Your Workspace</p>
   <div class="portal-brand-lockup">
     <img class="portal-logo" src="{{ url_for('static', filename='transmarley.png') }}" alt="AskMarley logo badge">
   </div>
   <h1>Sign In</h1>
-  <p>Use your consumer, provider, or admin account to access protected portals.</p>
+  <p>Continue to your consumer, provider, or admin workflow in one secure place.</p>
 </section>
 
-<section class="auth-shell">
-  <article class="tier-box">
-    <form class="admin-form" method="post">
+<section class="auth-shell login-shell">
+  <article class="tier-box login-card">
+    <div class="login-card-top">
+      <h2>Welcome back</h2>
+      <p class="muted">Sign in to keep chatting with Marley, manage projects, and track progress.</p>
+    </div>
+
+    <form class="admin-form auth-login-form" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label>Email</label>
-      <input type="email" name="email" placeholder="you@example.com" required>
-      <label>Password</label>
-      <input type="password" name="password" placeholder="Your password" required>
+
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" name="password" placeholder="Your password" autocomplete="current-password" required>
+      </div>
+
       <button class="btn btn-primary" type="submit">Sign In</button>
     </form>
-    <p class="muted">Need an account? <a href="{{ url_for('auth.register') }}">Register here</a>.</p>
+
+    <div class="login-meta">
+      <p class="muted">Need an account? <a href="{{ url_for('auth.register') }}">Register here</a>.</p>
+      <ul class="login-feature-list">
+        <li>Role-aware routing after sign-in</li>
+        <li>Secure CSRF-protected authentication</li>
+        <li>Fast access to chat and dashboards</li>
+      </ul>
+    </div>
   </article>
 
-  <aside class="chat-sidepanel">
-    <h3>Demo Access</h3>
-    <p class="muted">Use demo accounts for validation and QA flows.</p>
-    <div class="admin-form">
+  <aside class="chat-sidepanel login-sidepanel">
+    <h3>Try Demo Access</h3>
+    <p class="muted">Use sandbox users to explore flows without creating an account.</p>
+
+    <div class="demo-grid">
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="target" value="consumer">
-        <button class="btn btn-light" type="submit">Demo Consumer</button>
+        <button class="btn btn-light demo-btn" type="submit">Demo Consumer</button>
       </form>
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="target" value="provider">
-        <button class="btn btn-light" type="submit">Demo Provider</button>
+        <button class="btn btn-light demo-btn" type="submit">Demo Provider</button>
       </form>
       <form method="post" action="{{ url_for('auth.demo_login') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="target" value="admin">
-        <button class="btn btn-light" type="submit">Demo Admin</button>
+        <button class="btn btn-light demo-btn" type="submit">Demo Admin</button>
       </form>
     </div>
+
+    <p class="login-side-note muted">Demo accounts are reset regularly and intended for QA and walkthroughs.</p>
   </aside>
 </section>
 {% endblock %}

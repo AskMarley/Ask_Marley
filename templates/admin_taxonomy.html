@@ -11,14 +11,22 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="return_to" value="{{ request.path }}">
       <input type="hidden" name="action" value="add-taxonomy">
-      <input type="text" name="category_path" placeholder="Branch > Category > Service" required>
+      <input
+        type="text"
+        name="category_path"
+        class="js-taxonomy-input"
+        data-mode="add"
+        placeholder="Branch > Category > Service"
+        required
+      >
       <input type="text" name="reason" placeholder="Reason for adding taxonomy" required>
       <button class="btn btn-primary" type="submit">Add Category</button>
     </form>
+    <p class="form-note">Format: <strong>Branch &gt; Category &gt; Service</strong>. Minimum 3 levels required.</p>
 
     <ul class="admin-list">
       {% for entry in taxonomy %}
-        <li>
+        <li class="js-taxonomy-row" data-taxonomy-path="{{ entry.branch_path|lower }}" data-entry-id="{{ entry.id }}">
           <div class="row-head">
             <strong>{{ entry.branch_path }}</strong>
             <span class="status-pill">Version {{ entry.version }}</span>
@@ -30,7 +38,15 @@
             <input type="hidden" name="return_to" value="{{ request.path }}">
             <input type="hidden" name="action" value="edit-taxonomy">
             <input type="hidden" name="entry_id" value="{{ entry.id }}">
-            <input type="text" name="category_path" value="{{ entry.branch_path }}" required>
+            <input
+              type="text"
+              name="category_path"
+              class="js-taxonomy-input"
+              data-mode="edit"
+              data-entry-id="{{ entry.id }}"
+              value="{{ entry.branch_path }}"
+              required
+            >
             <input type="text" name="reason" placeholder="Reason for edit" required>
             <button class="btn btn-light" type="submit">Update</button>
           </form>
@@ -74,4 +90,84 @@
     </ul>
   </aside>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const rows = Array.from(document.querySelectorAll(".js-taxonomy-row"));
+    const inputs = Array.from(document.querySelectorAll(".js-taxonomy-input"));
+
+    const existingById = new Map();
+    rows.forEach((row) => {
+      existingById.set(String(row.dataset.entryId), (row.dataset.taxonomyPath || "").trim());
+    });
+
+    const normalizePath = (value) => value.trim().toLowerCase().replace(/\s+/g, " ");
+
+    const getFeedbackNode = (input) => {
+      const next = input.nextElementSibling;
+      if (next && next.classList.contains("taxonomy-input-feedback")) {
+        return next;
+      }
+      const feedback = document.createElement("small");
+      feedback.className = "taxonomy-input-feedback";
+      feedback.setAttribute("aria-live", "polite");
+      input.insertAdjacentElement("afterend", feedback);
+      return feedback;
+    };
+
+    const validateInput = (input) => {
+      const feedback = getFeedbackNode(input);
+      const raw = input.value || "";
+      const trimmed = raw.trim();
+
+      if (!trimmed) {
+        input.setCustomValidity("");
+        feedback.textContent = "";
+        feedback.classList.remove("is-error");
+        return;
+      }
+
+      const segments = trimmed.split(">").map((item) => item.trim()).filter(Boolean);
+      if (segments.length < 3) {
+        input.setCustomValidity("Taxonomy path must include at least 3 levels.");
+        feedback.textContent = "Add at least 3 levels: Branch > Category > Service.";
+        feedback.classList.add("is-error");
+        return;
+      }
+
+      const normalized = normalizePath(trimmed);
+      const mode = input.dataset.mode || "add";
+      const currentEntry = input.dataset.entryId || "";
+      let isDuplicate = false;
+
+      existingById.forEach((path, entryId) => {
+        if (mode === "edit" && entryId === currentEntry) {
+          return;
+        }
+        if (normalized === path) {
+          isDuplicate = true;
+        }
+      });
+
+      if (isDuplicate) {
+        input.setCustomValidity("Taxonomy path already exists.");
+        feedback.textContent = "This taxonomy path already exists.";
+        feedback.classList.add("is-error");
+        return;
+      }
+
+      input.setCustomValidity("");
+      feedback.textContent = "Looks good.";
+      feedback.classList.remove("is-error");
+    };
+
+    inputs.forEach((input) => {
+      input.addEventListener("input", () => validateInput(input));
+      input.addEventListener("blur", () => validateInput(input));
+      validateInput(input);
+    });
+  });
+</script>
 {% endblock %}

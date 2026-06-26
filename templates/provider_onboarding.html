@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}AskMarley | Provider Onboarding{% endblock %}
+{% block content %}
+<section class="portal-head">
+  <p class="portal-kicker">Provider Onboarding</p>
+  <h1>Complete Your Provider Setup</h1>
+  <p>Finish the essentials so AskMarley can route the right leads to you.</p>
+</section>
+
+<section class="provider-onboarding-layout">
+  <article class="provider-onboarding-card">
+    <h2>{{ provider_profile.name }}</h2>
+    <p class="provider-onboarding-summary">
+      Subscription: <strong>{{ provider_profile.tier|title }}</strong> | Billing: <strong>{{ provider_profile.billing_status|replace('_', ' ')|title }}</strong>
+    </p>
+    <ul class="provider-checklist">
+      {% for step in onboarding_steps %}
+        <li class="{% if step.complete %}is-complete{% endif %}">
+          <strong>{{ step.label }}</strong>
+          <span>{{ step.detail }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <aside class="provider-onboarding-sidepanel">
+    <h3>What happens next</h3>
+    <ul class="provider-list">
+      <li><strong>Complete profile</strong><p>Add business, service, and travel details.</p></li>
+      <li><strong>Get verified</strong><p>Insurance and business checks unlock trust signals.</p></li>
+      <li><strong>Receive leads</strong><p>Your dashboard lead queue becomes easier to act on.</p></li>
+    </ul>
+    <a class="btn btn-primary" href="{{ url_for('provider.dashboard') }}">Back to Dashboard</a>
+  </aside>
+</section>
+{% endblock %}

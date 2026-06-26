@@ -1,7 +1,8 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from uuid import uuid4
 
-from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, SERVICE_INTENTS, TIER_PRIORITY
-from askmarley.services.auth import role_required
+from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, CONSUMER_TIER_PRIORITY, PROVIDERS, SERVICE_INTENTS, TIER_PRIORITY
+from askmarley.services.auth import get_current_user, role_required
 from askmarley.services.collaboration import (
     add_pinboard_item,
     add_thread_pin,
@@ -14,47 +15,270 @@ from askmarley.services.collaboration import (
     mark_thread_read,
     report_thread_message,
     save_provider_to_project,
+    update_project_metadata,
 )
 from askmarley.services.matching import (
     detect_service_details,
+    extract_uk_location_code,
     find_matching_providers,
-    is_valid_uk_postcode,
-    normalize_uk_postcode,
 )
 from askmarley.services.subscriptions import (
     can_manage_projects,
     get_consumer_subscription,
     update_consumer_subscription,
 )
+from askmarley.services.stripe_billing import create_consumer_checkout_session
 from askmarley.services.transcript import log_concierge_message
 
 consumer_bp = Blueprint("consumer", __name__, url_prefix="/consumer")
 
 
+CONSUMER_CRM_ROLES = {"consumer", "admin", "super_admin"}
+ADMIN_ROLES = {"admin", "super_admin"}
+
+
+CHAT_COMMANDS_NEW_THREAD = {
+    "new chat",
+    "start new chat",
+    "new thread",
+    "reset chat",
+}
+
+CHAT_ACKNOWLEDGEMENTS = {
+    "ok",
+    "okay",
+    "thanks",
+    "thank you",
+    "great",
+    "perfect",
+    "nice",
+    "cool",
+    "alright",
+}
+
+CHAT_GREETINGS = {
+    "hi",
+    "hello",
+    "hey",
+    "hiya",
+    "good morning",
+    "good afternoon",
+    "good evening",
+}
+
+CHAT_CONFIRM_YES = {
+    "yes",
+    "y",
+    "yeah",
+    "yep",
+    "correct",
+    "right",
+    "that is right",
+    "sure",
+}
+
+CHAT_CONFIRM_NO = {
+    "no",
+    "n",
+    "nope",
+    "nah",
+    "wrong",
+    "not right",
+    "not correct",
+}
+
+QUICK_INTENT_MESSAGES = {
+    "emergency-plumber": "I have a leaky pipe",
+    "cleaner": "I need a cleaner",
+    "electrician": "I need an electrician",
+    "roofer": "I need a roofer",
+    "wedding-planner": "I need a wedding planner",
+    "gardener": "I need a gardener",
+    "dog-walker": "I need a dog walker",
+}
+
+
+def _welcome_message():
+    return "Hi, I'm Marley. Tell me what you need and I will match you with the right local service."
+
+
+def _has_consumer_crm_access(user):
+    if not user:
+        return False
+    return user.get("role") in CONSUMER_CRM_ROLES
+
+
+def _is_admin_request():
+    user = get_current_user()
+    if not user:
+        return False
+    return user.get("role") in ADMIN_ROLES
+
+
+def _default_chat_state():
+    return {
+        "step": "service",
+        "service_slug": None,
+        "options": [],
+        "confidence": 0.0,
+    }
+
+
+def _create_chat_thread():
+    welcome = _welcome_message()
+    return {
+        "id": uuid4().hex[:12],
+        "title": "New chat",
+        "chat_log": [{"sender": "marley", "text": welcome}],
+        "chat_state": _default_chat_state(),
+        "recommendations": [],
+    }
+
+
+def _sanitize_chat_threads(raw_threads):
+    threads = []
+    for thread in raw_threads or []:
+        if not isinstance(thread, dict):
+            continue
+        thread_id = thread.get("id") or uuid4().hex[:12]
+        title = thread.get("title") or "New chat"
+        chat_log = thread.get("chat_log") or []
+        chat_state = thread.get("chat_state") or _default_chat_state()
+        recommendations = thread.get("recommendations") or []
+
+        if not chat_log:
+            chat_log = [{"sender": "marley", "text": _welcome_message()}]
+
+        threads.append(
+            {
+                "id": thread_id,
+                "title": title,
+                "chat_log": chat_log,
+                "chat_state": chat_state,
+                "recommendations": recommendations,
+            }
+        )
+
+    return threads
+
+
+def _ensure_chat_threads():
+    threads = _sanitize_chat_threads(session.get("chat_threads", []))
+
+    # One-time migration for legacy single-thread session fields.
+    if not threads:
+        legacy_log = session.get("chat_log", [])
+        legacy_state = session.get("chat_state", _default_chat_state())
+        legacy_recs = session.get("recommendations", [])
+
+        if legacy_log:
+            migrated = _create_chat_thread()
+            migrated["title"] = "Previous chat"
+            migrated["chat_log"] = legacy_log
+            migrated["chat_state"] = legacy_state
+            migrated["recommendations"] = legacy_recs
+            threads.append(migrated)
+
+        if not threads:
+            threads.append(_create_chat_thread())
+
+    session["chat_threads"] = threads
+    if session.get("active_chat_thread_id") not in {thread["id"] for thread in threads}:
+        session["active_chat_thread_id"] = threads[0]["id"]
+    return threads
+
+
+def _history_preview(chat_log):
+    for msg in reversed(chat_log):
+        if msg.get("sender") == "user" and msg.get("text"):
+            text = msg["text"].strip()
+            return text if len(text) <= 45 else f"{text[:42]}..."
+    return "No message yet"
+
+
+def _is_acknowledgement(message):
+    normalized = (message or "").strip().lower()
+    return normalized in CHAT_ACKNOWLEDGEMENTS
+
+
+def _is_greeting(message):
+    normalized = (message or "").strip().lower()
+    return normalized in CHAT_GREETINGS
+
+
+def _is_service_confirmed(message):
+    normalized = (message or "").strip().lower()
+    return normalized in CHAT_CONFIRM_YES
+
+
+def _is_service_rejected(message):
+    normalized = (message or "").strip().lower()
+    return normalized in CHAT_CONFIRM_NO
+
+
 @consumer_bp.route("/chat", methods=["GET", "POST"])
 def chat():
-    chat_log = session.setdefault("chat_log", [])
-    if not chat_log:
-        welcome = (
-            "Hi, I'm Marley. Tell me what you need and I will match you "
-            "with the right local service."
+    current_user = get_current_user()
+    if not current_user:
+        return render_template(
+            "consumer_chat.html",
+            auth_gate_required=True,
+            login_next=url_for("consumer.chat"),
         )
-        chat_log.append({"sender": "marley", "text": welcome})
-        log_concierge_message(session, "marley", welcome)
 
-    chat_state = session.setdefault(
-        "chat_state",
-        {
-            "step": "service",
-            "service_slug": None,
-            "options": [],
-            "confidence": 0.0,
-        },
+    if not _has_consumer_crm_access(current_user):
+        flash("Your account does not have access to that area.", "error")
+        return redirect(url_for("main.home"))
+
+    chat_threads = _ensure_chat_threads()
+
+    if request.method == "POST" and request.form.get("action") == "delete_chat":
+        delete_thread_id = (request.form.get("delete_thread_id") or "").strip()
+        existing_count = len(chat_threads)
+        remaining_threads = [thread for thread in chat_threads if thread["id"] != delete_thread_id]
+
+        if len(remaining_threads) == existing_count:
+            flash("Chat not found.", "warning")
+            redirect_thread = session.get("active_chat_thread_id") or chat_threads[0]["id"]
+            return redirect(url_for("consumer.chat", thread=redirect_thread))
+
+        if not remaining_threads:
+            new_thread = _create_chat_thread()
+            remaining_threads = [new_thread]
+            session["active_chat_thread_id"] = new_thread["id"]
+        else:
+            active_thread_id = session.get("active_chat_thread_id")
+            valid_ids = {thread["id"] for thread in remaining_threads}
+            if active_thread_id not in valid_ids:
+                session["active_chat_thread_id"] = remaining_threads[0]["id"]
+
+        session["chat_threads"] = remaining_threads
+        session.modified = True
+        flash("Chat deleted.", "success")
+        return redirect(url_for("consumer.chat", thread=session["active_chat_thread_id"]))
+
+    thread_id = request.args.get("thread") or request.form.get("thread_id") or session.get(
+        "active_chat_thread_id"
     )
-    recommendations = session.get("recommendations", [])
+    active_thread = next((t for t in chat_threads if t["id"] == thread_id), chat_threads[0])
+    session["active_chat_thread_id"] = active_thread["id"]
+
+    chat_log = active_thread["chat_log"]
+    chat_state = active_thread["chat_state"]
+
+    if request.method == "POST" and request.form.get("action") == "new_chat":
+        new_thread = _create_chat_thread()
+        chat_threads.insert(0, new_thread)
+        session["chat_threads"] = chat_threads
+        session["active_chat_thread_id"] = new_thread["id"]
+        session.modified = True
+        flash("Started a new chat.", "success")
+        return redirect(url_for("consumer.chat", thread=new_thread["id"]))
+
+    recommendations = active_thread.get("recommendations", [])
 
     def send_marley_message(text, detected_service_slug=None, confidence=None):
-        chat_log.append({"sender": "marley", "text": text})
+        active_thread["chat_log"].append({"sender": "marley", "text": text})
         log_concierge_message(
             session,
             "marley",
@@ -66,7 +290,20 @@ def chat():
     if request.method == "POST":
         user_message = request.form.get("message", "").strip()
         if user_message:
-            chat_log.append({"sender": "user", "text": user_message})
+            if user_message.lower() in CHAT_COMMANDS_NEW_THREAD:
+                new_thread = _create_chat_thread()
+                chat_threads.insert(0, new_thread)
+                session["chat_threads"] = chat_threads
+                session["active_chat_thread_id"] = new_thread["id"]
+                session.modified = True
+                flash("Started a new chat.", "success")
+                return redirect(url_for("consumer.chat", thread=new_thread["id"]))
+
+            active_thread["chat_log"].append({"sender": "user", "text": user_message})
+            if active_thread.get("title") == "New chat":
+                active_thread["title"] = (
+                    user_message if len(user_message) <= 45 else f"{user_message[:42]}..."
+                )
             log_concierge_message(session, "user", user_message)
 
             if chat_state["step"] == "service":
@@ -74,10 +311,27 @@ def chat():
                 service_slug = detected["service_slug"]
 
                 if service_slug is None:
-                    send_marley_message(
-                        "I could not map that yet. Try details like leak, "
-                        "wiring, cleaning, or wedding planning."
-                    )
+                    if _is_greeting(user_message):
+                        send_marley_message(
+                            "Hi. Tell me what needs doing and your UK postcode when ready, "
+                            "for example: 'need a cleaner in SW1A 1AA'."
+                        )
+                    elif _is_acknowledgement(user_message):
+                        if recommendations:
+                            send_marley_message(
+                                "Great. You already have provider recommendations in the panel. "
+                                "Tell me another service and postcode anytime if you want a new match."
+                            )
+                        else:
+                            send_marley_message(
+                                "No problem. Share your service need and postcode when you're ready, "
+                                "for example: 'leaking pipe in SW1A 1AA'."
+                            )
+                    else:
+                        send_marley_message(
+                            "I could not map that yet. Try details like leak, "
+                            "wiring, cleaning, or wedding planning."
+                        )
                 elif detected["ambiguous"]:
                     chat_state["step"] = "clarify_service"
                     chat_state["options"] = detected["options"]
@@ -94,7 +348,7 @@ def chat():
                     )
                 else:
                     chat_state["service_slug"] = service_slug
-                    chat_state["step"] = "postcode"
+                    chat_state["step"] = "confirm_service"
                     chat_state["options"] = []
                     chat_state["confidence"] = detected["confidence"]
                     service_name = SERVICE_INTENTS[service_slug]["name"]
@@ -102,7 +356,7 @@ def chat():
                         (
                             f"Perfect. It sounds like you need {service_name} "
                             f"(confidence {detected['confidence']:.0%}). "
-                            "Please share your UK postcode."
+                            "Is that correct? Reply yes or no."
                         ),
                         detected_service_slug=service_slug,
                         confidence=detected["confidence"],
@@ -130,11 +384,12 @@ def chat():
 
                 if chosen_slug:
                     chat_state["service_slug"] = chosen_slug
-                    chat_state["step"] = "postcode"
+                    chat_state["step"] = "confirm_service"
                     chat_state["options"] = []
+                    chat_state["confidence"] = chat_state.get("confidence", 0.0)
                     service_name = SERVICE_INTENTS[chosen_slug]["name"]
                     send_marley_message(
-                        f"Great, {service_name} selected. Please share your UK postcode.",
+                        f"Great, {service_name} selected. Is that correct? Reply yes or no.",
                         detected_service_slug=chosen_slug,
                     )
                 else:
@@ -143,49 +398,161 @@ def chat():
                         "service name shown in the previous message."
                     )
 
-            elif chat_state["step"] == "postcode":
-                if is_valid_uk_postcode(user_message):
-                    postcode = normalize_uk_postcode(user_message)
-                    service_slug = chat_state["service_slug"]
-                    results = find_matching_providers(service_slug, postcode)
-                    session["recommendations"] = results
+            elif chat_state["step"] == "confirm_service":
+                current_slug = chat_state.get("service_slug")
+                direct_postcode = extract_uk_location_code(user_message)
+
+                if current_slug and direct_postcode:
+                    results = find_matching_providers(current_slug, direct_postcode)
+                    active_thread["recommendations"] = results
                     chat_state["step"] = "service"
                     chat_state["service_slug"] = None
                     chat_state["options"] = []
                     chat_state["confidence"] = 0.0
-                    session["chat_state"] = chat_state
                     if results:
                         top_name = results[0]["name"]
                         send_marley_message(
                             (
                                 f"Great. I found {len(results)} providers near "
-                                f"{postcode}. Top match: {top_name}. You can "
+                                f"{direct_postcode}. Top match: {top_name}. You can "
                                 "message them below."
                             ),
-                            detected_service_slug=service_slug,
+                            detected_service_slug=current_slug,
                         )
                     else:
                         send_marley_message(
                             "I could not find a local provider for that postcode "
                             "yet. Try another postcode or use manual search.",
-                            detected_service_slug=service_slug,
+                            detected_service_slug=current_slug,
                         )
                 else:
-                    send_marley_message(
-                        "That postcode format looks wrong. Please use a valid UK "
-                        "postcode such as SW1A 1AA."
-                    )
+                    redetect = detect_service_details(user_message)
+                    detected_slug = redetect["service_slug"]
 
-        session["chat_log"] = chat_log
+                    if detected_slug and detected_slug != current_slug and not redetect["ambiguous"]:
+                        chat_state["service_slug"] = detected_slug
+                        chat_state["step"] = "confirm_service"
+                        chat_state["options"] = []
+                        chat_state["confidence"] = redetect["confidence"]
+                        service_name = SERVICE_INTENTS[detected_slug]["name"]
+                        send_marley_message(
+                            f"No problem, switched to {service_name}. Is that correct? Reply yes or no.",
+                            detected_service_slug=detected_slug,
+                            confidence=redetect["confidence"],
+                        )
+                    elif redetect["ambiguous"]:
+                        chat_state["step"] = "clarify_service"
+                        chat_state["options"] = redetect["options"]
+                        chat_state["confidence"] = redetect["confidence"]
+                        options_text = ", ".join(
+                            f"{index + 1}) {SERVICE_INTENTS[slug]['name']}"
+                            for index, slug in enumerate(redetect["options"])
+                        )
+                        send_marley_message(
+                            f"I found a few likely services ({options_text}). Reply with a number or service name.",
+                            detected_service_slug=detected_slug,
+                            confidence=redetect["confidence"],
+                        )
+                    elif _is_service_confirmed(user_message):
+                        if not current_slug:
+                            chat_state["step"] = "service"
+                            send_marley_message(
+                                "Please tell me what service you need first, for example plumbing, cleaning, or roofing."
+                            )
+                        else:
+                            chat_state["step"] = "postcode"
+                            service_name = SERVICE_INTENTS[current_slug]["name"]
+                            send_marley_message(
+                                f"Great, {service_name} confirmed. Please share your UK postcode.",
+                                detected_service_slug=current_slug,
+                                confidence=chat_state.get("confidence"),
+                            )
+                    elif _is_service_rejected(user_message):
+                        chat_state["step"] = "service"
+                        chat_state["service_slug"] = None
+                        chat_state["options"] = []
+                        chat_state["confidence"] = 0.0
+                        send_marley_message(
+                            "Thanks for clarifying. Tell me the service you need and I will match it."
+                        )
+                    else:
+                        send_marley_message(
+                            "Please reply yes or no to confirm the service, or tell me the correct service."
+                        )
+
+            elif chat_state["step"] == "postcode":
+                redetect = detect_service_details(user_message)
+                detected_slug = redetect["service_slug"]
+                current_slug = chat_state["service_slug"]
+
+                if detected_slug and detected_slug != current_slug and not redetect["ambiguous"]:
+                    chat_state["service_slug"] = detected_slug
+                    chat_state["step"] = "postcode"
+                    chat_state["options"] = []
+                    chat_state["confidence"] = redetect["confidence"]
+                    service_name = SERVICE_INTENTS[detected_slug]["name"]
+                    send_marley_message(
+                        f"No problem, switched to {service_name}. Please share your UK postcode or area code (e.g. SW1A).",
+                        detected_service_slug=detected_slug,
+                        confidence=redetect["confidence"],
+                    )
+                else:
+                    postcode = extract_uk_location_code(user_message)
+                    if postcode:
+                        service_slug = chat_state["service_slug"]
+                        results = find_matching_providers(service_slug, postcode)
+                        active_thread["recommendations"] = results
+                        chat_state["step"] = "service"
+                        chat_state["service_slug"] = None
+                        chat_state["options"] = []
+                        chat_state["confidence"] = 0.0
+                        if results:
+                            top_name = results[0]["name"]
+                            send_marley_message(
+                                (
+                                    f"Great. I found {len(results)} providers near "
+                                    f"{postcode}. Top match: {top_name}. You can "
+                                    "message them below."
+                                ),
+                                detected_service_slug=service_slug,
+                            )
+                        else:
+                            send_marley_message(
+                                "I could not find a local provider for that postcode "
+                                "yet. Try another postcode or use manual search.",
+                                detected_service_slug=service_slug,
+                            )
+                    else:
+                        send_marley_message(
+                            "That postcode format looks wrong. Please include a valid UK "
+                            "postcode such as SW1A 1AA, or an area code like SW1A."
+                        )
+
+        active_thread["chat_state"] = chat_state
+        session["chat_threads"] = chat_threads
+        session["active_chat_thread_id"] = active_thread["id"]
         session.modified = True
-        return redirect(url_for("consumer.chat"))
+        return redirect(url_for("consumer.chat", thread=active_thread["id"]))
+
+    history = [
+        {
+            "id": thread["id"],
+            "title": thread.get("title", "New chat"),
+            "preview": _history_preview(thread.get("chat_log", [])),
+            "is_active": thread["id"] == active_thread["id"],
+        }
+        for thread in chat_threads
+    ]
 
     return render_template(
         "consumer_chat.html",
-        chat_log=chat_log,
+        chat_log=active_thread["chat_log"],
         recommendations=recommendations,
         service_intents=SERVICE_INTENTS,
+        quick_intent_messages=QUICK_INTENT_MESSAGES,
         tier_priority=TIER_PRIORITY,
+        chat_history=history,
+        active_thread_id=active_thread["id"],
     )
 
 
@@ -228,18 +595,127 @@ def search():
     )
 
 
+@consumer_bp.get("/providers/<int:provider_id>")
+def provider_detail(provider_id):
+    provider = next((entry for entry in PROVIDERS if entry["id"] == provider_id), None)
+    if not provider:
+        flash("Provider not found.", "error")
+        return redirect(url_for("consumer.chat"))
+
+    service = SERVICE_INTENTS.get(provider["service_slug"], {})
+    # Consumer view should only receive public profile attributes.
+    provider_public = {
+        "id": provider["id"],
+        "name": provider["name"],
+        "service_slug": provider["service_slug"],
+        "postcodes": provider.get("postcodes", []),
+        "verified": bool(provider.get("verified")),
+        "marleys_choice": bool(provider.get("marleys_choice")),
+    }
+    return render_template(
+        "consumer_provider_detail.html",
+        provider=provider_public,
+        service=service,
+    )
+
+
+@consumer_bp.post("/providers/<int:provider_id>/contact")
+@role_required("consumer", "admin", "super_admin")
+def provider_contact(provider_id):
+    provider = next((entry for entry in PROVIDERS if entry["id"] == provider_id), None)
+    if not provider:
+        flash("Provider not found.", "error")
+        return redirect(url_for("consumer.chat"))
+
+    consumer_sub = get_consumer_subscription(session)
+    projects = get_projects(session)
+    consumer_location = None
+    auth_user_id = session.get("auth_user_id")
+    if auth_user_id:
+        from askmarley.extensions import db
+        from askmarley.models import User
+
+        consumer_user = db.session.get(User, auth_user_id)
+        if consumer_user and consumer_user.role == "consumer":
+            consumer_location = extract_uk_location_code(consumer_user.consumer_postcode or "")
+
+    if consumer_sub["effective_tier"] == "free" and not _is_admin_request():
+        flash("Upgrade your plan to contact providers in project chat.", "warning")
+        return redirect(url_for("consumer.subscription"))
+
+    target_project = None
+    for project in projects:
+        if provider["name"] in project.get("saved_providers", []):
+            target_project = project
+            break
+
+    if target_project is None:
+        if projects:
+            target_project = projects[0]
+        else:
+            if not can_manage_projects(session, len(projects)) and not _is_admin_request():
+                flash("You reached your project limit. Upgrade to start a provider chat.", "warning")
+                return redirect(url_for("consumer.subscription"))
+            target_project = create_project(
+                session,
+                f"{provider['name']} enquiry",
+                service_slug=provider["service_slug"],
+                location_code=consumer_location,
+            )
+
+        save_provider_to_project(session, target_project["id"], provider["name"])
+
+    update_project_metadata(
+        session,
+        target_project["id"],
+        service_slug=provider["service_slug"],
+        location_code=consumer_location,
+    )
+
+    flash(f"Chat opened with {provider['name']}.", "success")
+    return redirect(
+        url_for(
+            "consumer.project_chat",
+            project_id=target_project["id"],
+            viewer="consumer",
+        )
+    )
+
+
 @consumer_bp.route("/clipboard", methods=["GET", "POST"])
-@role_required("consumer")
+@role_required("consumer", "admin", "super_admin")
 def clipboard():
     consumer_sub = get_consumer_subscription(session)
     user_tier_slug = consumer_sub["effective_tier"]
     user_tier = consumer_sub["plan"]
     projects = get_projects(session)
+    consumer_default_postcode = ""
+    auth_user_id = session.get("auth_user_id")
+    if auth_user_id:
+        from askmarley.extensions import db
+        from askmarley.models import User
+
+        consumer_user = db.session.get(User, auth_user_id)
+        if consumer_user and consumer_user.role == "consumer":
+            consumer_default_postcode = consumer_user.consumer_postcode or ""
+    total_saved_providers = sum(len(project["saved_providers"]) for project in projects)
+    total_pinboard_items = sum(len(project["pinboard_items"]) for project in projects)
+    stats = {
+        "project_count": len(projects),
+        "saved_provider_count": total_saved_providers,
+        "pinboard_count": total_pinboard_items,
+    }
 
     if request.method == "POST":
         project_name = request.form.get("project_name", "").strip()
+        service_slug = request.form.get("service_slug", "").strip()
+        location_code = extract_uk_location_code(request.form.get("location_code", "").strip())
         if not project_name:
             flash("Project name is required.", "error")
+        elif service_slug not in SERVICE_INTENTS:
+            flash("Choose the service you need for this project.", "error")
+        elif not location_code:
+            flash("Enter a valid UK postcode or outward code for this project.", "error")
         else:
             if not can_manage_projects(session, len(projects)):
                 flash(
@@ -247,7 +723,12 @@ def clipboard():
                     "warning",
                 )
             else:
-                created = create_project(session, project_name)
+                created = create_project(
+                    session,
+                    project_name,
+                    service_slug=service_slug,
+                    location_code=location_code,
+                )
                 flash(f"Project created: {created['name']}", "success")
         return redirect(url_for("consumer.clipboard", tier=user_tier_slug))
 
@@ -261,11 +742,33 @@ def clipboard():
         over_limit=over_limit,
         all_provider_names=get_all_provider_names(),
         consumer_sub=consumer_sub,
+        service_options=SERVICE_INTENTS,
+        consumer_default_postcode=consumer_default_postcode,
+        stats=stats,
     )
 
 
+@consumer_bp.post("/clipboard/<int:project_id>/details")
+@role_required("consumer", "admin", "super_admin")
+def clipboard_update_project_details(project_id):
+    tier = get_consumer_subscription(session)["effective_tier"]
+    service_slug = request.form.get("service_slug", "").strip()
+    location_code = extract_uk_location_code(request.form.get("location_code", "").strip())
+
+    if service_slug not in SERVICE_INTENTS:
+        flash("Choose the service you need for this project.", "error")
+    elif not location_code:
+        flash("Enter a valid UK postcode or outward code for this project.", "error")
+    elif update_project_metadata(session, project_id, service_slug=service_slug, location_code=location_code):
+        flash("Project details updated.", "success")
+    else:
+        flash("Project not found.", "error")
+
+    return redirect(url_for("consumer.clipboard", tier=tier))
+
+
 @consumer_bp.get("/dashboard")
-@role_required("consumer")
+@role_required("consumer", "admin", "super_admin")
 def dashboard():
     consumer_sub = get_consumer_subscription(session)
     projects = get_projects(session)
@@ -289,12 +792,12 @@ def dashboard():
 
 
 @consumer_bp.post("/clipboard/<int:project_id>/save-provider")
-@role_required("consumer")
+@role_required("consumer", "admin", "super_admin")
 def clipboard_save_provider(project_id):
     provider_name = request.form.get("provider_name", "").strip()
     tier = get_consumer_subscription(session)["effective_tier"]
 
-    if get_consumer_subscription(session)["effective_tier"] == "free":
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
         flash("Upgrade your plan to save providers to projects.", "warning")
         return redirect(url_for("consumer.clipboard", tier=tier))
 
@@ -308,13 +811,13 @@ def clipboard_save_provider(project_id):
 
 
 @consumer_bp.post("/clipboard/<int:project_id>/pin")
-@role_required("consumer")
+@role_required("consumer", "admin", "super_admin")
 def clipboard_pinboard_add(project_id):
     pin_label = request.form.get("pin_label", "").strip()
     pin_image = request.files.get("pin_image")
     tier = get_consumer_subscription(session)["effective_tier"]
 
-    if get_consumer_subscription(session)["effective_tier"] == "free":
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
         flash("Upgrade your plan to add pinboard items.", "warning")
         return redirect(url_for("consumer.clipboard", tier=tier))
 
@@ -328,9 +831,9 @@ def clipboard_pinboard_add(project_id):
 
 
 @consumer_bp.route("/clipboard/<int:project_id>/chat", methods=["GET", "POST"])
-@role_required("consumer", "provider")
+@role_required("consumer", "provider", "admin", "super_admin")
 def project_chat(project_id):
-    if get_consumer_subscription(session)["effective_tier"] == "free":
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
         flash("Upgrade your plan to access project collaboration chat.", "warning")
         return redirect(url_for("consumer.clipboard"))
 
@@ -372,7 +875,7 @@ def project_chat(project_id):
 
 
 @consumer_bp.post("/clipboard/<int:project_id>/chat/report")
-@role_required("consumer", "provider")
+@role_required("consumer", "provider", "admin", "super_admin")
 def project_chat_report(project_id):
     viewer = request.args.get("viewer", "consumer")
     reason = request.form.get("reason", "User reported content").strip()
@@ -405,7 +908,8 @@ def subscription():
     if request.method == "POST":
         tier = request.form.get("tier", "free")
         billing_status = request.form.get("billing_status", "active")
-        update_consumer_subscription(session, tier, billing_status)
+        pending_tier = request.form.get("pending_tier")
+        update_consumer_subscription(session, tier, billing_status, pending_tier=pending_tier)
         flash("Consumer subscription updated.", "success")
         return redirect(url_for("consumer.subscription"))
 
@@ -414,5 +918,70 @@ def subscription():
         "consumer_subscription.html",
         consumer_sub=consumer_sub,
         tiers=CONSUMER_TIERS,
+        consumer_tier_priority=CONSUMER_TIER_PRIORITY,
         billing_statuses=BILLING_STATUSES,
+        stripe_enabled=bool(current_app.config.get("STRIPE_SECRET_KEY")),
     )
+
+
+@consumer_bp.post("/subscription/checkout")
+@role_required("consumer")
+def subscription_checkout():
+    tier = request.form.get("tier", "free")
+    consumer_sub = get_consumer_subscription(session)
+    current_tier = consumer_sub["selected_tier"]
+    current_rank = CONSUMER_TIER_PRIORITY.get(current_tier, 0)
+    requested_rank = CONSUMER_TIER_PRIORITY.get(tier, 0)
+
+    if requested_rank < current_rank:
+        if consumer_sub["billing_status"] in {"active", "grace"}:
+            update_consumer_subscription(session, current_tier, consumer_sub["billing_status"], pending_tier=tier)
+            pending_label = CONSUMER_TIERS[tier]["label"]
+            flash(
+                f"Downgrade confirmed. Your current plan stays active until the billing period ends, then your next renewal switches to {pending_label}.",
+                "success",
+            )
+        else:
+            update_consumer_subscription(session, tier, "active")
+            flash("Downgrade applied immediately because the current billing period has already ended.", "success")
+        return redirect(url_for("consumer.subscription"))
+
+    if tier == "free":
+        flash("Free tier does not require checkout.", "warning")
+        return redirect(url_for("consumer.subscription"))
+
+    if requested_rank == current_rank:
+        flash("You are already on that plan.", "info")
+        return redirect(url_for("consumer.subscription"))
+
+    try:
+        checkout = create_consumer_checkout_session(
+            secret_key=current_app.config.get("STRIPE_SECRET_KEY", ""),
+            publishable_key=current_app.config.get("STRIPE_PUBLISHABLE_KEY", ""),
+            tier=tier,
+            success_url=url_for("consumer.subscription_success", tier=tier, _external=True),
+            cancel_url=url_for("consumer.subscription_cancel", _external=True),
+            user=session.get("auth_user"),
+        )
+    except Exception as exc:  # Keep UX clear for config/setup errors.
+        flash(f"Unable to start Stripe checkout: {exc}", "error")
+        return redirect(url_for("consumer.subscription"))
+
+    return redirect(checkout["url"])
+
+
+@consumer_bp.get("/subscription/success")
+@role_required("consumer")
+def subscription_success():
+    tier = request.args.get("tier", "free")
+    if tier in CONSUMER_TIERS and tier != "free":
+        update_consumer_subscription(session, tier, "active")
+    flash("Payment received. Subscription is now active.", "success")
+    return redirect(url_for("consumer.subscription"))
+
+
+@consumer_bp.get("/subscription/cancel")
+@role_required("consumer")
+def subscription_cancel():
+    flash("Checkout canceled. No changes were made to your subscription.", "warning")
+    return redirect(url_for("consumer.subscription"))

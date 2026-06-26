@@ -18,7 +18,7 @@ from askmarley.models import (
 
 FLAGGED_TERMS = {"scam", "abuse", "idiot", "fraud", "threat"}
 ALLOWED_UPLOAD_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-UPLOAD_FOLDER = Path(__file__).parent.parent / "static" / "uploads"
+UPLOAD_FOLDER = Path(__file__).resolve().parents[2] / "static" / "uploads"
 
 
 def _ensure_upload_dir():
@@ -32,6 +32,8 @@ def _default_projects():
             "id": 1,
             "name": "Kitchen Renovation",
             "status": "In progress",
+            "service_slug": "emergency-plumber",
+            "location_code": "SW1A",
             "saved_providers": ["Royal Flow Plumbing", "Albion Spark Works"],
             "pinboard_items": ["Floor plan v3", "Budget estimate", "Sink leak photo"],
             "timeline": ["Created project", "Saved first providers"],
@@ -40,6 +42,8 @@ def _default_projects():
             "id": 2,
             "name": "Move-out Deep Clean",
             "status": "Shortlisting",
+            "service_slug": "cleaner",
+            "location_code": "SE1",
             "saved_providers": ["North Star Domestic Care"],
             "pinboard_items": ["Inventory checklist", "Before photos"],
             "timeline": ["Created project", "Pinned inventory checklist"],
@@ -60,7 +64,12 @@ def _get_persistent_consumer(session):
 
 def _project_to_dict(project):
     saved_providers = [item.provider_name for item in project.saved_provider_links]
-    pinboard_items = [item.label for item in project.pinboard_links]
+    pinboard_items = [
+        {"label": item.label, "image": item.image_path}
+        if item.image_path
+        else item.label
+        for item in project.pinboard_links
+    ]
     timeline = ["Created project"]
     if saved_providers:
         timeline.append(f"Saved providers: {len(saved_providers)}")
@@ -71,6 +80,8 @@ def _project_to_dict(project):
         "id": project.id,
         "name": project.name,
         "status": project.status,
+        "service_slug": project.service_slug,
+        "location_code": project.location_code,
         "saved_providers": saved_providers,
         "pinboard_items": pinboard_items,
         "timeline": timeline,
@@ -104,13 +115,15 @@ def get_project_by_id(session, project_id):
     return None
 
 
-def create_project(session, project_name):
+def create_project(session, project_name, service_slug=None, location_code=None):
     consumer = _get_persistent_consumer(session)
     if consumer:
         new_project = Project(
             user_id=consumer.id,
             name=project_name,
             status="Shortlisting",
+            service_slug=service_slug,
+            location_code=location_code,
         )
         db.session.add(new_project)
         db.session.commit()
@@ -122,6 +135,8 @@ def create_project(session, project_name):
         "id": next_id,
         "name": project_name,
         "status": "Shortlisting",
+        "service_slug": service_slug,
+        "location_code": location_code,
         "saved_providers": [],
         "pinboard_items": [],
         "timeline": ["Created project"],
@@ -163,6 +178,30 @@ def save_provider_to_project(session, project_id, provider_name):
         project["saved_providers"].append(provider_name)
         project["timeline"].append(f"Saved provider: {provider_name}")
         session.modified = True
+    return True
+
+
+def update_project_metadata(session, project_id, service_slug=None, location_code=None):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return False
+
+        project.service_slug = service_slug or project.service_slug
+        project.location_code = location_code or project.location_code
+        db.session.commit()
+        return True
+
+    project = get_project_by_id(session, project_id)
+    if not project:
+        return False
+
+    if service_slug:
+        project["service_slug"] = service_slug
+    if location_code:
+        project["location_code"] = location_code
+    session.modified = True
     return True
 
 

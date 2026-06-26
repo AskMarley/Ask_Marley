@@ -73,6 +73,18 @@ def test_detect_service_for_roof_leak_prefers_roofer():
     assert result["ambiguous"] is False
 
 
+def test_detect_service_for_smart_tv_maps_to_electrician():
+    result = detect_service_details("need to fix my smart tv")
+    assert result["service_slug"] == "electrician"
+    assert result["ambiguous"] is False
+
+
+def test_detect_service_for_television_repair_maps_to_electrician():
+    result = detect_service_details("can someone do television repair")
+    assert result["service_slug"] == "electrician"
+    assert result["confidence"] > 0
+
+
 def test_provider_matching_for_roofer_postcode():
     results = find_matching_providers("roofer", "SW1A 2AA")
     assert results
