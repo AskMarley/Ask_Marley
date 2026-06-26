@@ -114,6 +114,11 @@ def create_app(config_name=None):
                         connection.execute(sa.text("ALTER TABLE projects ADD COLUMN service_slug VARCHAR(80)"))
                     if "location_code" not in project_columns:
                         connection.execute(sa.text("ALTER TABLE projects ADD COLUMN location_code VARCHAR(12)"))
+            if inspector.has_table("project_pinboard_items"):
+                pinboard_columns = {column["name"] for column in inspector.get_columns("project_pinboard_items")}
+                with db.engine.begin() as connection:
+                    if "image_path" not in pinboard_columns:
+                        connection.execute(sa.text("ALTER TABLE project_pinboard_items ADD COLUMN image_path VARCHAR(500)"))
         inspector = inspect(db.engine)
         if inspector.has_table("users"):
             user_columns = {column["name"] for column in inspector.get_columns("users")}
