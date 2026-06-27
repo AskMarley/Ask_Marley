@@ -165,41 +165,40 @@
                 <h4>Pinboard Items</h4>
                 <div class="gallery-grid">
                   {% for item in project.pinboard_items %}
-                    {% if item is mapping and item.get('image') %}
+                    <div class="gallery-item-card" data-pin-card>
+                      {% if item.get('image') %}
+                        <button
+                          class="gallery-item clipboard-gallery-trigger"
+                          type="button"
+                          data-gallery-project="{{ project.id }}"
+                          data-gallery-src="{{ item.image }}"
+                          data-gallery-label="{{ item.label }}"
+                          aria-label="Open item {{ item.label }}"
+                        >
+                          <img src="{{ item.image }}" alt="{{ item.label }}" loading="lazy">
+                          <p class="gallery-label">{{ item.label }}</p>
+                        </button>
+                        <form method="post" action="{{ url_for('consumer.clipboard_pinboard_remove_image', project_id=project.id, pin_id=item.id, tier=user_tier_slug) }}" class="clipboard-image-remove-form" data-async-remove-image>
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button class="btn btn-light" type="submit">Remove Image</button>
+                        </form>
+                      {% else %}
                       <button
-                        class="gallery-item clipboard-gallery-trigger"
+                        class="gallery-item gallery-item-text-only clipboard-gallery-trigger"
                         type="button"
                         data-gallery-project="{{ project.id }}"
-                        data-gallery-src="{{ item.image }}"
+                        data-gallery-src=""
                         data-gallery-label="{{ item.label }}"
                         aria-label="Open item {{ item.label }}"
                       >
-                        <img src="{{ item.image }}" alt="{{ item.label }}" loading="lazy">
                         <p class="gallery-label">{{ item.label }}</p>
                       </button>
-                    {% elif item is string %}
-                      <button
-                        class="gallery-item gallery-item-text-only clipboard-gallery-trigger"
-                        type="button"
-                        data-gallery-project="{{ project.id }}"
-                        data-gallery-src=""
-                        data-gallery-label="{{ item }}"
-                        aria-label="Open item {{ item }}"
-                      >
-                        <p class="gallery-label">{{ item }}</p>
-                      </button>
-                    {% else %}
-                      <button
-                        class="gallery-item gallery-item-text-only clipboard-gallery-trigger"
-                        type="button"
-                        data-gallery-project="{{ project.id }}"
-                        data-gallery-src=""
-                        data-gallery-label="{{ item.label if item is mapping else item }}"
-                        aria-label="Open item {{ item.label if item is mapping else item }}"
-                      >
-                        <p class="gallery-label">{{ item.label if item is mapping else item }}</p>
-                      </button>
-                    {% endif %}
+                      {% endif %}
+                      <form method="post" action="{{ url_for('consumer.clipboard_pinboard_delete', project_id=project.id, pin_id=item.id, tier=user_tier_slug) }}" class="clipboard-pin-delete-form" data-async-delete-pin>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-light" type="submit">Delete Pin</button>
+                      </form>
+                    </div>
                   {% endfor %}
                 </div>
               </div>
@@ -257,8 +256,8 @@
     const imageEl = document.getElementById("clipboardGalleryImage");
     const fallbackEl = document.getElementById("clipboardGalleryFallback");
     const captionEl = document.getElementById("clipboardGalleryCaption");
-    const triggers = Array.from(document.querySelectorAll(".clipboard-gallery-trigger"));
-    if (!triggers.length) {
+    const getTriggers = () => Array.from(document.querySelectorAll(".clipboard-gallery-trigger"));
+    if (!getTriggers().length) {
       return;
     }
 
@@ -289,7 +288,7 @@
     };
 
     const openModal = (group, src, label) => {
-      activeItems = triggers
+      activeItems = getTriggers()
         .filter((el) => el.dataset.galleryProject === group)
         .map((el) => ({
           src: el.dataset.gallerySrc,
@@ -336,14 +335,17 @@
       updateStage();
     };
 
-    triggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => {
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest(".clipboard-gallery-trigger");
+      if (!trigger) {
+        return;
+      }
+      event.preventDefault();
         openModal(
           trigger.dataset.galleryProject,
           trigger.dataset.gallerySrc,
           trigger.dataset.galleryLabel
         );
-      });
     });
 
     modal.querySelectorAll("[data-gallery-close]").forEach((el) => {
@@ -371,6 +373,115 @@
       } else if (event.key === "ArrowRight") {
         move(1);
       }
+    });
+  })();
+
+  (function () {
+    const forms = Array.from(document.querySelectorAll("[data-async-remove-image]"));
+    if (!forms.length || !window.fetch) {
+      return;
+    }
+
+    forms.forEach((form) => {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = form.querySelector("button[type='submit']");
+        const csrf = form.querySelector("input[name='csrf_token']");
+        const card = form.closest("[data-pin-card]");
+        const trigger = card ? card.querySelector(".clipboard-gallery-trigger") : null;
+        if (!button || !csrf || !card || !trigger) {
+          form.submit();
+          return;
+        }
+
+        button.disabled = true;
+        const originalLabel = button.textContent;
+        button.textContent = "Removing...";
+
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "X-CSRF-Token": csrf.value
+            },
+            body: formData
+          });
+
+          const payload = await response.json();
+          if (!response.ok || payload.status !== "ok") {
+            throw new Error(payload.message || "Unable to remove that image.");
+          }
+
+          trigger.dataset.gallerySrc = "";
+          trigger.classList.add("gallery-item-text-only");
+          const image = trigger.querySelector("img");
+          if (image) {
+            image.remove();
+          }
+          form.remove();
+        } catch (error) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+          window.alert(error.message || "Unable to remove that image.");
+        }
+      });
+    });
+  })();
+
+  (function () {
+    const modal = document.getElementById("clipboardGalleryModal");
+    const deleteForms = Array.from(document.querySelectorAll("[data-async-delete-pin]"));
+    if (!deleteForms.length || !window.fetch) {
+      return;
+    }
+
+    deleteForms.forEach((form) => {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = form.querySelector("button[type='submit']");
+        const csrf = form.querySelector("input[name='csrf_token']");
+        const card = form.closest("[data-pin-card]");
+        if (!button || !csrf || !card) {
+          form.submit();
+          return;
+        }
+
+        button.disabled = true;
+        const originalLabel = button.textContent;
+        button.textContent = "Deleting...";
+
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "X-CSRF-Token": csrf.value
+            },
+            body: formData
+          });
+
+          const payload = await response.json();
+          if (!response.ok || payload.status !== "ok") {
+            throw new Error(payload.message || "Unable to delete that pinboard item.");
+          }
+
+          if (modal && modal.classList.contains("open")) {
+            modal.classList.remove("open");
+            modal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("gallery-open");
+          }
+          card.remove();
+        } catch (error) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+          window.alert(error.message || "Unable to delete that pinboard item.");
+        }
+      });
     });
   })();
 </script>

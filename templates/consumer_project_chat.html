@@ -7,9 +7,9 @@
 </section>
 
 <section class="chat-shell">
-  <article class="chat-window">
+  <article class="chat-window project-chat-window">
     <div class="chat-header">
-      <div>
+      <div class="chat-header-copy">
         <h2>Project Thread</h2>
         <p>Viewing as: {{ viewer|title }}</p>
       </div>
@@ -20,17 +20,17 @@
       </div>
     </div>
 
-    <div class="chat-log">
+    <div class="chat-log" id="projectChatLog">
       {% for msg in thread.messages %}
         <div class="bubble-row {{ 'user' if msg.sender == viewer else 'marley' }}">
           <div class="bubble">
             <strong>{{ msg.sender|title }}</strong><br>
             {{ msg.text }}
             {% if msg.flagged %}
-              <div><span class="badge" style="background:#ffe8ea;border-color:#f3b1b8;color:#8f0e1b;">Flagged for moderation</span></div>
+              <div><span class="badge badge-flagged">Flagged for moderation</span></div>
             {% endif %}
             {% if msg.sender != 'marley' %}
-              <form method="post" action="{{ url_for('consumer.project_chat_report', project_id=project.id, viewer=viewer) }}" style="margin-top:0.35rem;">
+              <form method="post" action="{{ url_for('consumer.project_chat_report', project_id=project.id, viewer=viewer) }}" class="chat-report-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="message_index" value="{{ loop.index0 }}">
                 <input type="hidden" name="reason" value="User report from project chat">
@@ -43,32 +43,314 @@
       {% endfor %}
     </div>
 
-    <form class="chat-form" method="post">
+    <form
+      class="chat-form chat-message-form"
+      method="post"
+      action="{{ url_for('consumer.project_chat', project_id=project.id, viewer=viewer) }}"
+      data-api-url="{{ url_for('consumer.project_chat_message', project_id=project.id, viewer=viewer) }}"
+      data-report-url="{{ url_for('consumer.project_chat_report', project_id=project.id, viewer=viewer) }}"
+    >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input name="message" type="text" placeholder="Send a message in this project thread" autocomplete="off">
+      <input
+        class="chat-message-input"
+        name="message"
+        type="text"
+        placeholder="Send a message in this project thread"
+        autocomplete="off"
+        aria-label="Project chat message"
+        enterkeyhint="send"
+        maxlength="300"
+      >
       <button class="btn btn-primary" type="submit">Send</button>
+      <p class="chat-form-status muted" id="projectChatStatus" aria-live="polite"></p>
     </form>
   </article>
 
   <aside class="chat-sidepanel">
     <h3>Thread Pinboard</h3>
+    <p class="muted chat-sidepanel-empty{% if thread.pinboard %} is-hidden{% endif %}" id="threadPinboardEmpty">No thread pins yet.</p>
     {% if thread.pinboard %}
-      <ul class="provider-list">
+      <ul class="provider-list" id="threadPinboardList">
         {% for pin in thread.pinboard %}
           <li>{{ pin }}</li>
         {% endfor %}
       </ul>
     {% else %}
-      <p class="muted">No thread pins yet.</p>
+      <ul class="provider-list is-hidden" id="threadPinboardList"></ul>
     {% endif %}
 
-    <form class="admin-form" method="post">
+    <form
+      class="admin-form chat-pin-form"
+      method="post"
+      action="{{ url_for('consumer.project_chat', project_id=project.id, viewer=viewer) }}"
+      data-api-url="{{ url_for('consumer.project_chat_pin', project_id=project.id, viewer=viewer) }}"
+    >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="text" name="pin_label" placeholder="Pin item to this thread">
+      <input type="text" name="pin_label" placeholder="Pin item to this thread" maxlength="120">
       <button class="btn btn-light" type="submit">Add Pin</button>
+      <p class="chat-form-status muted" id="threadPinboardStatus" aria-live="polite"></p>
     </form>
 
-    <p class="muted">Unread seller notifications: {{ thread.notifications.provider }}<br>Unread buyer notifications: {{ thread.notifications.consumer }}</p>
+    <div class="chat-unread-summary">
+      <div class="chat-unread-card">
+        <span class="chat-unread-label">Unread seller</span>
+        <strong>{{ thread.notifications.provider }}</strong>
+      </div>
+      <div class="chat-unread-card">
+        <span class="chat-unread-label">Unread buyer</span>
+        <strong>{{ thread.notifications.consumer }}</strong>
+      </div>
+    </div>
   </aside>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (() => {
+    const form = document.querySelector('.chat-message-form');
+    const log = document.getElementById('projectChatLog');
+    const status = document.getElementById('projectChatStatus');
+    if (!form || !log || !window.fetch) {
+      return;
+    }
+
+    const input = form.querySelector('input[name="message"]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const csrfInput = form.querySelector('input[name="csrf_token"]');
+    const reportUrl = form.dataset.reportUrl;
+    const viewerLabel = '{{ viewer|title }}';
+
+    const scrollToLatest = () => {
+      log.scrollTop = log.scrollHeight;
+    };
+
+    const setStatus = (message, isError = false) => {
+      status.textContent = message || '';
+      status.classList.toggle('is-error', Boolean(isError));
+    };
+
+    const appendFlaggedBadge = (bubble) => {
+      if (bubble.querySelector('.badge-flagged')) {
+        return;
+      }
+      const flaggedWrap = document.createElement('div');
+      const flaggedBadge = document.createElement('span');
+      flaggedBadge.className = 'badge badge-flagged';
+      flaggedBadge.textContent = 'Flagged for moderation';
+      flaggedWrap.appendChild(flaggedBadge);
+      const timestamp = bubble.querySelector('small.muted');
+      bubble.insertBefore(flaggedWrap, timestamp || null);
+    };
+
+    const appendMessage = (message, reportIndex) => {
+      const row = document.createElement('div');
+      row.className = `bubble-row ${message.sender === '{{ viewer }}' ? 'user' : 'marley'}`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const sender = document.createElement('strong');
+      sender.textContent = message.sender === '{{ viewer }}' ? viewerLabel : `${message.sender.charAt(0).toUpperCase()}${message.sender.slice(1)}`;
+      bubble.appendChild(sender);
+      bubble.appendChild(document.createElement('br'));
+      bubble.appendChild(document.createTextNode(message.text));
+
+      if (message.flagged) {
+        appendFlaggedBadge(bubble);
+      }
+
+      if (message.sender !== 'marley') {
+        const reportForm = document.createElement('form');
+        reportForm.method = 'post';
+        reportForm.action = reportUrl;
+        reportForm.className = 'chat-report-form';
+
+        const reportCsrf = document.createElement('input');
+        reportCsrf.type = 'hidden';
+        reportCsrf.name = 'csrf_token';
+        reportCsrf.value = csrfInput.value;
+
+        const reportIndexInput = document.createElement('input');
+        reportIndexInput.type = 'hidden';
+        reportIndexInput.name = 'message_index';
+        reportIndexInput.value = String(reportIndex);
+
+        const reportReason = document.createElement('input');
+        reportReason.type = 'hidden';
+        reportReason.name = 'reason';
+        reportReason.value = 'User report from project chat';
+
+        const reportButton = document.createElement('button');
+        reportButton.className = 'btn btn-light';
+        reportButton.type = 'submit';
+        reportButton.textContent = 'Report';
+
+        reportForm.append(reportCsrf, reportIndexInput, reportReason, reportButton);
+        bubble.appendChild(reportForm);
+      }
+
+      const timestamp = document.createElement('small');
+      timestamp.className = 'muted';
+      timestamp.textContent = message.timestamp;
+      bubble.appendChild(timestamp);
+
+      row.appendChild(bubble);
+      log.appendChild(row);
+      scrollToLatest();
+    };
+
+    scrollToLatest();
+
+    log.addEventListener('submit', async (event) => {
+      const reportForm = event.target.closest('.chat-report-form');
+      if (!reportForm) {
+        return;
+      }
+
+      event.preventDefault();
+      const reportButton = reportForm.querySelector('button[type="submit"]');
+      const bubble = reportForm.closest('.bubble');
+      if (!reportButton || !bubble) {
+        return;
+      }
+
+      reportButton.disabled = true;
+      setStatus('Reporting message...');
+
+      try {
+        const formData = new FormData(reportForm);
+        const response = await fetch(reportForm.action, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-Token': csrfInput.value
+          },
+          body: formData
+        });
+
+        const payload = await response.json();
+        if (!response.ok || payload.status !== 'ok') {
+          throw new Error(payload.message || 'Unable to report that message.');
+        }
+
+        appendFlaggedBadge(bubble);
+        reportButton.textContent = 'Reported';
+        setStatus(payload.message || 'Message reported.');
+      } catch (error) {
+        reportButton.disabled = false;
+        setStatus(error.message || 'Unable to report that message.', true);
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message) {
+        setStatus('Enter a message before sending.', true);
+        return;
+      }
+
+      submitButton.disabled = true;
+      input.disabled = true;
+      setStatus('Sending...');
+
+      try {
+        const formData = new FormData();
+        formData.set('message', message);
+
+        const response = await fetch(form.dataset.apiUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': csrfInput.value,
+            'Accept': 'application/json'
+          },
+          body: formData
+        });
+
+        const payload = await response.json();
+        if (!response.ok || payload.status !== 'ok') {
+          throw new Error(payload.message || 'Unable to send message.');
+        }
+
+        appendMessage(payload.message, payload.report_index);
+        input.value = '';
+        setStatus('Message sent.');
+      } catch (error) {
+        setStatus(error.message || 'Unable to send message.', true);
+      } finally {
+        submitButton.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    });
+  })();
+
+  (() => {
+    const form = document.querySelector('.chat-pin-form');
+    const list = document.getElementById('threadPinboardList');
+    const emptyState = document.getElementById('threadPinboardEmpty');
+    const status = document.getElementById('threadPinboardStatus');
+    if (!form || !list || !status || !window.fetch) {
+      return;
+    }
+
+    const input = form.querySelector('input[name="pin_label"]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const csrfInput = form.querySelector('input[name="csrf_token"]');
+
+    const setStatus = (message, isError = false) => {
+      status.textContent = message || '';
+      status.classList.toggle('is-error', Boolean(isError));
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const pinLabel = input.value.trim();
+      if (!pinLabel) {
+        setStatus('Enter a pin label before adding it.', true);
+        return;
+      }
+
+      submitButton.disabled = true;
+      input.disabled = true;
+      setStatus('Adding pin...');
+
+      try {
+        const formData = new FormData();
+        formData.set('pin_label', pinLabel);
+
+        const response = await fetch(form.dataset.apiUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-Token': csrfInput.value,
+            'Accept': 'application/json'
+          },
+          body: formData
+        });
+
+        const payload = await response.json();
+        if (!response.ok || payload.status !== 'ok') {
+          throw new Error(payload.message || 'Unable to add pin.');
+        }
+
+        const item = document.createElement('li');
+        item.textContent = payload.pin.label;
+        list.appendChild(item);
+        list.classList.remove('is-hidden');
+        if (emptyState) {
+          emptyState.classList.add('is-hidden');
+        }
+        input.value = '';
+        setStatus('Pin added.');
+      } catch (error) {
+        setStatus(error.message || 'Unable to add pin.', true);
+      } finally {
+        submitButton.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    });
+  })();
+</script>
 {% endblock %}

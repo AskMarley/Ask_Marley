@@ -1,7 +1,8 @@
 from flask_app import app
 from askmarley.extensions import db
 from askmarley.models import Project, ProjectPinboardItem, User
-from askmarley.services.collaboration import _project_to_dict
+from askmarley.services.collaboration import UPLOAD_FOLDER, _project_to_dict
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -536,10 +537,178 @@ def test_project_to_dict_includes_pinboard_image_metadata():
 
         payload = _project_to_dict(project)
 
-        assert "Text only" in payload["pinboard_items"]
-        assert {"label": "With image", "image": "/static/uploads/example.jpg"} in payload[
-            "pinboard_items"
+        text_item = next(item for item in payload["pinboard_items"] if item["label"] == "Text only")
+        image_item = next(item for item in payload["pinboard_items"] if item["label"] == "With image")
+        assert text_item["image"] is None
+        assert text_item["id"]
+        assert image_item["label"] == "With image"
+        assert image_item["image"] == "/static/uploads/example.jpg"
+        assert image_item["id"]
+
+
+def test_clipboard_can_remove_uploaded_pinboard_image():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    upload_path = UPLOAD_FOLDER / "test_remove_pin_image.png"
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"fake-image-bytes")
+
+    with client.session_transaction() as sess:
+        sess["clipboard_projects"] = [
+            {
+                "id": 1,
+                "name": "Kitchen Renovation",
+                "status": "Shortlisting",
+                "service_slug": "emergency-plumber",
+                "location_code": "SW1A",
+                "saved_providers": [],
+                "pinboard_items": [
+                    {
+                        "id": "pin-image-1",
+                        "label": "Leaking pipe photo",
+                        "image": "/static/uploads/test_remove_pin_image.png",
+                    }
+                ],
+                "timeline": ["Created project"],
+            }
         ]
+
+    response = client.post(
+        "/consumer/clipboard/1/pin/pin-image-1/remove-image",
+        data={"csrf_token": token},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Uploaded image removed from pinboard item." in response.data
+    assert not upload_path.exists()
+
+    with client.session_transaction() as sess:
+        pin_item = sess["clipboard_projects"][0]["pinboard_items"][0]
+        assert pin_item["label"] == "Leaking pipe photo"
+        assert pin_item["image"] is None
+
+
+def test_clipboard_remove_uploaded_pinboard_image_returns_json_for_async_callers():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    upload_path = UPLOAD_FOLDER / "test_remove_pin_image_async.png"
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"fake-image-bytes")
+
+    with client.session_transaction() as sess:
+        sess["clipboard_projects"] = [
+            {
+                "id": 1,
+                "name": "Kitchen Renovation",
+                "status": "Shortlisting",
+                "service_slug": "emergency-plumber",
+                "location_code": "SW1A",
+                "saved_providers": [],
+                "pinboard_items": [
+                    {
+                        "id": "pin-image-async-1",
+                        "label": "Pipe image",
+                        "image": "/static/uploads/test_remove_pin_image_async.png",
+                    }
+                ],
+                "timeline": ["Created project"],
+            }
+        ]
+
+    response = client.post(
+        "/consumer/clipboard/1/pin/pin-image-async-1/remove-image",
+        data={"csrf_token": token},
+        headers={"X-CSRF-Token": token, "Accept": "application/json"},
+    )
+
+    assert response.status_code == 200
+    assert response.json["status"] == "ok"
+    assert "Uploaded image removed" in response.json["message"]
+    assert not upload_path.exists()
+
+
+def test_clipboard_can_delete_pinboard_item():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    upload_path = UPLOAD_FOLDER / "test_delete_pin_image.png"
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"fake-image-bytes")
+
+    with client.session_transaction() as sess:
+        sess["clipboard_projects"] = [
+            {
+                "id": 1,
+                "name": "Kitchen Renovation",
+                "status": "Shortlisting",
+                "service_slug": "emergency-plumber",
+                "location_code": "SW1A",
+                "saved_providers": [],
+                "pinboard_items": [
+                    {
+                        "id": "pin-delete-1",
+                        "label": "Pipe image",
+                        "image": "/static/uploads/test_delete_pin_image.png",
+                    }
+                ],
+                "timeline": ["Created project"],
+            }
+        ]
+
+    response = client.post(
+        "/consumer/clipboard/1/pin/pin-delete-1/delete",
+        data={"csrf_token": token},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Pinboard item deleted." in response.data
+    assert not upload_path.exists()
+
+    with client.session_transaction() as sess:
+        assert sess["clipboard_projects"][0]["pinboard_items"] == []
+
+
+def test_clipboard_delete_pinboard_item_returns_json_for_async_callers():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    with client.session_transaction() as sess:
+        sess["clipboard_projects"] = [
+            {
+                "id": 1,
+                "name": "Kitchen Renovation",
+                "status": "Shortlisting",
+                "service_slug": "emergency-plumber",
+                "location_code": "SW1A",
+                "saved_providers": [],
+                "pinboard_items": [
+                    {
+                        "id": "pin-delete-async-1",
+                        "label": "Budget estimate",
+                        "image": None,
+                    }
+                ],
+                "timeline": ["Created project"],
+            }
+        ]
+
+    response = client.post(
+        "/consumer/clipboard/1/pin/pin-delete-async-1/delete",
+        data={"csrf_token": token},
+        headers={"X-CSRF-Token": token, "Accept": "application/json"},
+    )
+
+    assert response.status_code == 200
+    assert response.json["status"] == "ok"
+    assert "Pinboard item deleted" in response.json["message"]
 
 
 def test_consumer_dashboard_route():
@@ -565,6 +734,39 @@ def test_project_chat_post_message():
     )
     assert response.status_code == 200
     assert b"Message sent" in response.data
+
+
+def test_project_chat_message_api_returns_json_without_redirect():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    response = client.post(
+        "/consumer/clipboard/1/chat/message?viewer=consumer",
+        data={"message": "Need the updated quote by Friday"},
+        headers={"X-CSRF-Token": token},
+    )
+
+    assert response.status_code == 201
+    assert response.json["status"] == "ok"
+    assert response.json["message"]["text"] == "Need the updated quote by Friday"
+    assert response.json["message"]["sender"] == "consumer"
+
+
+def test_project_chat_pin_api_returns_json_without_redirect():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+
+    response = client.post(
+        "/consumer/clipboard/1/chat/pin?viewer=consumer",
+        data={"pin_label": "Budget sheet v2"},
+        headers={"X-CSRF-Token": token},
+    )
+
+    assert response.status_code == 201
+    assert response.json["status"] == "ok"
+    assert response.json["pin"]["label"] == "Budget sheet v2"
 
 
 def test_consumer_subscription_update():
@@ -797,6 +999,27 @@ def test_project_chat_report_creates_moderation_case():
     )
     assert response.status_code == 200
     assert b"Message reported" in response.data
+
+
+def test_project_chat_report_returns_json_for_async_callers():
+    client = app.test_client()
+    _set_auth_user(client, role="consumer")
+    token = _set_csrf(client)
+    client.post(
+        "/consumer/clipboard/1/chat?viewer=consumer",
+        data={"message": "Please confirm quote", "pin_label": "", "csrf_token": token},
+        follow_redirects=True,
+    )
+
+    response = client.post(
+        "/consumer/clipboard/1/chat/report?viewer=consumer",
+        data={"message_index": "1", "reason": "Abusive wording"},
+        headers={"X-CSRF-Token": token, "Accept": "application/json"},
+    )
+
+    assert response.status_code == 200
+    assert response.json["status"] == "ok"
+    assert "Message reported" in response.json["message"]
 
 
 def test_admin_moderation_status_update():

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import os
 from pathlib import Path
+from uuid import uuid4
 from werkzeug.utils import secure_filename
 
 from askmarley.data import PROVIDERS
@@ -35,7 +36,11 @@ def _default_projects():
             "service_slug": "emergency-plumber",
             "location_code": "SW1A",
             "saved_providers": ["Royal Flow Plumbing", "Albion Spark Works"],
-            "pinboard_items": ["Floor plan v3", "Budget estimate", "Sink leak photo"],
+            "pinboard_items": [
+                {"id": uuid4().hex, "label": "Floor plan v3", "image": None},
+                {"id": uuid4().hex, "label": "Budget estimate", "image": None},
+                {"id": uuid4().hex, "label": "Sink leak photo", "image": None},
+            ],
             "timeline": ["Created project", "Saved first providers"],
         },
         {
@@ -45,7 +50,10 @@ def _default_projects():
             "service_slug": "cleaner",
             "location_code": "SE1",
             "saved_providers": ["North Star Domestic Care"],
-            "pinboard_items": ["Inventory checklist", "Before photos"],
+            "pinboard_items": [
+                {"id": uuid4().hex, "label": "Inventory checklist", "image": None},
+                {"id": uuid4().hex, "label": "Before photos", "image": None},
+            ],
             "timeline": ["Created project", "Pinned inventory checklist"],
         },
     ]
@@ -62,14 +70,32 @@ def _get_persistent_consumer(session):
     return user
 
 
+def _serialize_pinboard_item(item):
+    if isinstance(item, ProjectPinboardItem):
+        return {"id": str(item.id), "label": item.label, "image": item.image_path}
+
+    if isinstance(item, dict):
+        return {
+            "id": str(item.get("id") or uuid4().hex),
+            "label": item.get("label") or "Untitled pin",
+            "image": item.get("image"),
+        }
+
+    return {"id": uuid4().hex, "label": str(item), "image": None}
+
+
+def _normalize_session_project_pinboard(project):
+    pinboard_items = project.get("pinboard_items", [])
+    normalized_items = [_serialize_pinboard_item(item) for item in pinboard_items]
+    if pinboard_items != normalized_items:
+        project["pinboard_items"] = normalized_items
+        return True
+    return False
+
+
 def _project_to_dict(project):
     saved_providers = [item.provider_name for item in project.saved_provider_links]
-    pinboard_items = [
-        {"label": item.label, "image": item.image_path}
-        if item.image_path
-        else item.label
-        for item in project.pinboard_links
-    ]
+    pinboard_items = [_serialize_pinboard_item(item) for item in project.pinboard_links]
     timeline = ["Created project"]
     if saved_providers:
         timeline.append(f"Saved providers: {len(saved_providers)}")
@@ -99,6 +125,11 @@ def get_projects(session):
         return [_project_to_dict(project) for project in projects]
 
     projects = session.setdefault("clipboard_projects", _default_projects())
+    normalized = False
+    for project in projects:
+        normalized = _normalize_session_project_pinboard(project) or normalized
+    if normalized:
+        session["clipboard_projects"] = projects
     session.modified = True
     return projects
 
@@ -234,9 +265,10 @@ def add_pinboard_item(session, project_id, item_label, image_file=None):
 
     # For session-based storage, store as dict with image reference
     project["pinboard_items"].append({
+        "id": uuid4().hex,
         "label": item_label,
-        "image": image_path
-    } if image_path else item_label)
+        "image": image_path,
+    })
     project["timeline"].append(f"Pinned: {item_label}")
     session.modified = True
     return True
@@ -256,8 +288,7 @@ def save_pinboard_image(project_id, image_file):
         return None
     
     # Create a unique filename with project ID to avoid conflicts
-    import uuid
-    unique_name = f"pin_{project_id}_{uuid.uuid4().hex[:8]}_{filename}"
+    unique_name = f"pin_{project_id}_{uuid4().hex[:8]}_{filename}"
     filepath = UPLOAD_FOLDER / unique_name
     
     try:
@@ -267,6 +298,88 @@ def save_pinboard_image(project_id, image_file):
     except Exception as e:
         print(f"Error saving pinboard image: {e}")
         return None
+
+
+def _delete_local_upload(image_path):
+    if not image_path or not image_path.startswith("/static/uploads/"):
+        return
+
+    filename = image_path.removeprefix("/static/uploads/")
+    if not filename:
+        return
+
+    filepath = UPLOAD_FOLDER / filename
+    try:
+        if filepath.exists() and filepath.is_file():
+            filepath.unlink()
+    except OSError:
+        pass
+
+
+def remove_pinboard_image(session, project_id, pin_id):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return False
+
+        pin_item = ProjectPinboardItem.query.filter_by(project_id=project.id, id=pin_id).first()
+        if not pin_item or not pin_item.image_path:
+            return False
+
+        _delete_local_upload(pin_item.image_path)
+        pin_item.image_path = None
+        db.session.commit()
+        return True
+
+    project = get_project_by_id(session, project_id)
+    if not project:
+        return False
+
+    for item in project.get("pinboard_items", []):
+        if str(item.get("id")) != str(pin_id):
+            continue
+        if not item.get("image"):
+            return False
+
+        _delete_local_upload(item.get("image"))
+        item["image"] = None
+        session.modified = True
+        return True
+
+    return False
+
+
+def delete_pinboard_item(session, project_id, pin_id):
+    consumer = _get_persistent_consumer(session)
+    if consumer:
+        project = Project.query.filter_by(id=project_id, user_id=consumer.id).first()
+        if not project:
+            return False
+
+        pin_item = ProjectPinboardItem.query.filter_by(project_id=project.id, id=pin_id).first()
+        if not pin_item:
+            return False
+
+        _delete_local_upload(pin_item.image_path)
+        db.session.delete(pin_item)
+        db.session.commit()
+        return True
+
+    project = get_project_by_id(session, project_id)
+    if not project:
+        return False
+
+    for index, item in enumerate(project.get("pinboard_items", [])):
+        if str(item.get("id")) != str(pin_id):
+            continue
+
+        _delete_local_upload(item.get("image"))
+        project["pinboard_items"].pop(index)
+        session.modified = True
+        return True
+
+    return False
 
 
 def get_all_provider_names():

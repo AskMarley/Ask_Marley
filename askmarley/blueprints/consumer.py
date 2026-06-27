@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from uuid import uuid4
 
 from askmarley.data import BILLING_STATUSES, CONSUMER_TIERS, CONSUMER_TIER_PRIORITY, PROVIDERS, SERVICE_INTENTS, TIER_PRIORITY
@@ -8,11 +8,13 @@ from askmarley.services.collaboration import (
     add_thread_pin,
     append_chat_message,
     create_project,
+    delete_pinboard_item,
     get_all_provider_names,
     get_project_by_id,
     get_projects,
     get_thread,
     mark_thread_read,
+    remove_pinboard_image,
     report_thread_message,
     save_provider_to_project,
     update_project_metadata,
@@ -833,6 +835,56 @@ def clipboard_pinboard_add(project_id):
     return redirect(url_for("consumer.clipboard", tier=tier))
 
 
+@consumer_bp.post("/clipboard/<int:project_id>/pin/<pin_id>/remove-image")
+@role_required("consumer", "admin", "super_admin")
+def clipboard_pinboard_remove_image(project_id, pin_id):
+    tier = get_consumer_subscription(session)["effective_tier"]
+    wants_json = "application/json" in (request.headers.get("Accept") or "")
+
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
+        if wants_json:
+            return jsonify({"status": "error", "message": "Upgrade your plan to manage pinboard images."}), 403
+        flash("Upgrade your plan to manage pinboard images.", "warning")
+        return redirect(url_for("consumer.clipboard", tier=tier))
+
+    pin_identifier = int(pin_id) if str(pin_id).isdigit() else pin_id
+    if remove_pinboard_image(session, project_id, pin_identifier):
+        if wants_json:
+            return jsonify({"status": "ok", "message": "Uploaded image removed from pinboard item."}), 200
+        flash("Uploaded image removed from pinboard item.", "success")
+    else:
+        if wants_json:
+            return jsonify({"status": "error", "message": "Unable to remove that image."}), 400
+        flash("Unable to remove that image.", "error")
+
+    return redirect(url_for("consumer.clipboard", tier=tier))
+
+
+@consumer_bp.post("/clipboard/<int:project_id>/pin/<pin_id>/delete")
+@role_required("consumer", "admin", "super_admin")
+def clipboard_pinboard_delete(project_id, pin_id):
+    tier = get_consumer_subscription(session)["effective_tier"]
+    wants_json = "application/json" in (request.headers.get("Accept") or "")
+
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
+        if wants_json:
+            return jsonify({"status": "error", "message": "Upgrade your plan to manage pinboard items."}), 403
+        flash("Upgrade your plan to manage pinboard items.", "warning")
+        return redirect(url_for("consumer.clipboard", tier=tier))
+
+    pin_identifier = int(pin_id) if str(pin_id).isdigit() else pin_id
+    if delete_pinboard_item(session, project_id, pin_identifier):
+        if wants_json:
+            return jsonify({"status": "ok", "message": "Pinboard item deleted."}), 200
+        flash("Pinboard item deleted.", "success")
+    else:
+        if wants_json:
+            return jsonify({"status": "error", "message": "Unable to delete that pinboard item."}), 400
+        flash("Unable to delete that pinboard item.", "error")
+
+    return redirect(url_for("consumer.clipboard", tier=tier))
+
+
 @consumer_bp.route("/clipboard/<int:project_id>/chat", methods=["GET", "POST"])
 @role_required("consumer", "provider", "admin", "super_admin")
 def project_chat(project_id):
@@ -877,12 +929,64 @@ def project_chat(project_id):
     )
 
 
+@consumer_bp.post("/clipboard/<int:project_id>/chat/message")
+@role_required("consumer", "provider", "admin", "super_admin")
+def project_chat_message(project_id):
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
+        return jsonify({"status": "error", "message": "Upgrade your plan to access project collaboration chat."}), 403
+
+    project = get_project_by_id(session, project_id)
+    if not project:
+        return jsonify({"status": "error", "message": "Project not found."}), 404
+
+    viewer = request.args.get("viewer", "consumer")
+    if viewer not in {"consumer", "provider"}:
+        viewer = "consumer"
+
+    message = (request.form.get("message") or "").strip()
+    if not message:
+        return jsonify({"status": "error", "message": "Message cannot be empty."}), 400
+
+    appended = append_chat_message(session, project_id, viewer, message)
+    if not appended:
+        return jsonify({"status": "error", "message": "Unable to append message."}), 400
+
+    thread = get_thread(session, project_id) or {"messages": []}
+    report_index = max(len(thread.get("messages", [])) - 1, 0)
+
+    return jsonify({
+        "status": "ok",
+        "message": appended,
+        "report_index": report_index,
+        "viewer": viewer,
+    }), 201
+
+
+@consumer_bp.post("/clipboard/<int:project_id>/chat/pin")
+@role_required("consumer", "provider", "admin", "super_admin")
+def project_chat_pin(project_id):
+    if get_consumer_subscription(session)["effective_tier"] == "free" and not _is_admin_request():
+        return jsonify({"status": "error", "message": "Upgrade your plan to access project collaboration chat."}), 403
+
+    project = get_project_by_id(session, project_id)
+    if not project:
+        return jsonify({"status": "error", "message": "Project not found."}), 404
+
+    pin_label = (request.form.get("pin_label") or "").strip()
+    if not pin_label:
+        return jsonify({"status": "error", "message": "Pinboard item cannot be empty."}), 400
+
+    add_thread_pin(session, project_id, pin_label)
+    return jsonify({"status": "ok", "pin": {"label": pin_label}}), 201
+
+
 @consumer_bp.post("/clipboard/<int:project_id>/chat/report")
 @role_required("consumer", "provider", "admin", "super_admin")
 def project_chat_report(project_id):
     viewer = request.args.get("viewer", "consumer")
     reason = request.form.get("reason", "User reported content").strip()
     message_index = int(request.form.get("message_index", "-1"))
+    wants_json = "application/json" in (request.headers.get("Accept") or "")
 
     reported = report_thread_message(
         session,
@@ -891,6 +995,11 @@ def project_chat_report(project_id):
         reporter=viewer,
         reason=reason or "User reported content",
     )
+    if wants_json:
+        if reported:
+            return jsonify({"status": "ok", "message": "Message reported. Admin moderation queue updated."}), 200
+        return jsonify({"status": "error", "message": "Unable to report that message."}), 400
+
     if reported:
         flash("Message reported. Admin moderation queue updated.", "warning")
     else:
